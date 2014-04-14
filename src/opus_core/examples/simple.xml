@@ -1,0 +1,20 @@
+<opus_project>
+  <xml_version>2.0</xml_version>
+  <general>
+    <project_name type="string">simplest_project</project_name>
+    <expression_library type="dictionary" />
+    <available_datasets type="list">['household','establishment','building','parcel']</available_datasets>
+    <spatial_datasets type="list">[]</spatial_datasets>
+  </general>
+  <scenario_manager>
+  </scenario_manager>
+  <model_manager>
+    <models hidden="False" name="Models" config_name="model_system"  type="dictionary">    
+    </models>
+  </model_manager>
+  <data_manager> </data_manager>
+  <results_manager> 
+     <indicator_batches name="Indicator Batches" setexpanded="True" type="group"/>
+    <simulation_runs followers="Results" name="Simulation Runs" setexpanded="True" type="all_source_data"/>
+   </results_manager>
+</opus_project>

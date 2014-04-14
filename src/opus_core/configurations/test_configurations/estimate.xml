@@ -1,0 +1,44 @@
+<opus_project>
+  <xml_version>2.0</xml_version>
+  <general>
+    <expression_library type="dictionary">
+      <variable source="expression" type="variable_definition" use="model variable" name="parcel.ln_cost">ln(psrc.parcel.cost)</variable>
+      <variable source="Python class" type="variable_definition" use="model variable" name="parcel.existing_units">urbansim_parcel.parcel.existing_units<!--some comment--></variable>
+      <variable source="Python class" type="variable_definition" use="model variable" name="parcel.bsqft">urbansim_parcel.parcel.building_sqft</variable>
+      <!-- <variable source="Python class" type="variable_definition" use="model variable" name="parcel.bsqft">urbansim_parcel.parcel.building_sqft</variable> -->
+    </expression_library>
+    <project_name type="string">test_project</project_name>
+    <!--some comment-->
+    <test_node oceanic_attribute="squid" test_attribute="parent_value" type="string">this is just to test attribute inheritance<!--some comment--></test_node>
+  </general>
+  <model_manager>
+    <estimation_config type="dictionary" name="Estimation Configuration" />
+    <models hidden="False" name="Models">
+      <model type="model" name="real_estate_price_model">
+        <structure>
+        </structure>
+        <specification>
+          <submodel type="submodel" name="single_family_residential" submodel_id="24">
+            <variable_list type="variable_list">
+              <variable_spec name=".ln_cost" />
+              <variable_spec name=".existing_units"><!--some comment--></variable_spec>
+              <!--some comment-->
+              <variable_spec name=".bsqft" />
+            </variable_list>
+          </submodel>
+          <submodel type="submodel" name="single_family_residential" submodel_id="25">
+            <variable_list type="variable_list">
+              <variable_spec name=".existing_units"><!--some comment--></variable_spec>
+              <variable_spec name=".ln_cost" coefficient_name="cost" />
+              <variable_spec name=".bsqft" coefficient_name="bsqft" fixed_value="10" />
+              <!--some comment-->
+            </variable_list>
+          </submodel>
+          <!--some comment-->
+        </specification>
+      </model>
+    </models>
+    <!--some comment-->
+    <templates hidden="True" />
+  </model_manager>
+</opus_project>

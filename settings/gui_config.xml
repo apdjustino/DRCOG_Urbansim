@@ -1,0 +1,19 @@
+<gui_configuration>
+        <startup_options>
+                <splash_logo>opus-logo.bmp</splash_logo>
+        </startup_options>
+        <application_options>
+            <application_title>URBANSIM2</application_title>
+        </application_options>
+          <font_settings>
+            <menu_font_size>10</menu_font_size>
+            <main_tabs_font_size>12</main_tabs_font_size>
+            <general_text_font_size>11</general_text_font_size>
+          </font_settings>
+          <project_history>
+                  <open_latest_project_on_start>True</open_latest_project_on_start>
+                  <previous_project>C:\Users\janowicz\Dropbox\repos\urbansim_drcog\src\drcog\configs\drcog_urbansim2.xml</previous_project>
+                  <open_latest_tab_on_start>False</open_latest_tab_on_start>
+                  <previous_tab>1</previous_tab>
+          </project_history>
+</gui_configuration>
