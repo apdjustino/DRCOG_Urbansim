@@ -133,7 +133,8 @@ def calculate_variables(dset):
     
     ##JOINS
     #merge parcels with zones
-    pz = pd.merge(p,z,left_on='zone_id',right_index=True)
+    pz = pd.merge(p.reset_index(),z,left_on='zone_id',right_index=True)
+    pz = pz.set_index('parcel_id')
     #merge buildings with parcels/zones
     del b['county_id']
     del b['zone_id']

@@ -10,6 +10,9 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     del households['county_id']
     parcels = dset.fetch('parcels')
     zones = dset.fetch('zones')
+    pz = pd.merge(parcels.reset_index(),zones,left_on='zone_id',right_index=True,how='left')
+    pz = pz.set_index('parcel_id')
+    bpz = pd.merge(buildings,pz,left_on='parcel_id',right_index=True)
     
     ##Merge buildings and parcels
     buildings = pd.merge(buildings,parcels,left_on='parcel_id',right_index=True)
@@ -87,10 +90,6 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     
     #####Export jobs table
     e = establishments.reset_index()
-    #e = establishments
-    # print e.index.name
-    # print e.columns
-    # print e.employees.sum()
     bids = []
     eids = []
     hbs = []
@@ -106,6 +105,19 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     print len(hbs)
     print len(sids)
     jobs = pd.DataFrame({'job_id':range(1,len(bids)+1),'building_id':bids,'establishment_id':eids,'home_based_status':hbs,'sector_id':sids})
+    jobs['x'] = bpz.centroid_x[jobs.building_id].values
+    jobs['y'] = bpz.centroid_y[jobs.building_id].values
+    jobs['taz05_id'] = bpz.external_zone_id[jobs.building_id].values
+    jobs['sector_id_six'] = 1*(jobs.sector_id==61) + 2*(jobs.sector_id==71) + 3*np.in1d(jobs.sector_id,[11,21,22,23,31,32,33,42,48,49]) + 4*np.in1d(jobs.sector_id,[7221,7222,7224]) + 5*np.in1d(jobs.sector_id,[44,45,7211,7212,7213,7223]) + 6*np.in1d(jobs.sector_id,[51,52,53,54,55,56,62,81,92])
+    jobs['jobtypename'] = ''
+    jobs.jobtypename[jobs.sector_id_six==1] = 'Education'
+    jobs.jobtypename[jobs.sector_id_six==2] = 'Entertainment'
+    jobs.jobtypename[jobs.sector_id_six==3] = 'Production'
+    jobs.jobtypename[jobs.sector_id_six==4] = 'Restaurant'
+    jobs.jobtypename[jobs.sector_id_six==5] = 'Retail'
+    jobs.jobtypename[jobs.sector_id_six==6] = 'Service'
+    jobs['urbancenter_id'] = 0
+    del jobs['sector_id_six']
     jobs.to_csv(tm_input_dir+'\\jobs%s.csv'%sim_year,index=False)
     
     #####Export synthetic households

@@ -16,11 +16,17 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         transitionmodel.simulate(dset,new_jobs,year=year,show=True)
 
     choosers = dset.fetch(simulation_table)
+    placed_choosers = choosers[choosers[depvar]>0]
 
     movers = choosers[choosers[depvar]==-1]
     print "Total new agents and movers = %d" % len(movers.index)
+    alternatives.building_sqft_per_job = alternatives.building_sqft_per_job.fillna(1000)
     alternatives['spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job
-    empty_units = alternatives.spaces.sub(choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
+    try:
+        empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
+    except:
+        from IPython import embed
+        embed()
     alts = alternatives.ix[empty_units.index]
     alts["supply"] = empty_units
     lotterychoices = True
