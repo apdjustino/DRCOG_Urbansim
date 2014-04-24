@@ -167,3 +167,7 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     other_zonal_indicators.to_csv(tm_input_dir+'\\other_zonal_indicators%s.csv'%sim_year)
     other_county_indicators.to_csv(tm_input_dir+'\\other_county_indicators%s.csv'%sim_year)
     
+    
+    ####RUN TRAVEL MODEL
+    raw_input("Press Enter when travel model is finished running...")
+    
