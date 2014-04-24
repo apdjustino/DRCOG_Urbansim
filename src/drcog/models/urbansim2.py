@@ -67,11 +67,11 @@ class Urbansim2(Model):
             if core_components_to_run['Price']:
                 logger.log_status('REPM simulation.')
                 #Residential
-                # regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_residential',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
-                                                     # agents_groupby = 'building_type_id', segment_ids = [2,3,20,24])
+                regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_residential',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
+                                                     agents_groupby = 'building_type_id', segment_ids = [2,3,20,24])
                 #Non-residential                                    
-                # regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
-                                                     # agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])
+                regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
+                                                     agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])
                 
             ############     DEVELOPER SIMULATION
             if core_components_to_run['Developer']:

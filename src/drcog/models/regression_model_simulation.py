@@ -26,7 +26,11 @@ def simulate(dset,year,output_varname = 'price',simulation_table = 'buildings',o
         print "Generating rents on %d buildings" % (est_data.shape[0])
         vec = dset.load_coeff(tmp_coeffname)
         vec = np.reshape(vec,(vec.size,1))
-        rents = est_data.dot(vec).astype('f4')
+        try:
+            rents = est_data.dot(vec).astype('f4')
+        except:
+            est_data['const'] = 1
+            rents = pd.DataFrame({'rents':np.transpose(np.dot(est_data,vec).astype('f4'))[0]},index=est_data.index)
         rents = rents.apply(np.exp)
         simrents.append(rents[rents.columns[0]])
     simrents = pd.concat(simrents)
