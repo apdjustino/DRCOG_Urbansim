@@ -169,5 +169,5 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     
     
     ####RUN TRAVEL MODEL
-    raw_input("Press Enter when travel model is finished running...")
+    # raw_input("Press Enter when travel model is finished running...")
     

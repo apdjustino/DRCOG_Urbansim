@@ -142,3 +142,5 @@ def calculate_variables(dset):
     bpz['residential_units_capacity'] = bpz.parcel_sqft/1500 - bpz.residential_units
     bpz.residential_units_capacity[bpz.residential_units_capacity<0] = 0
     dset.d['buildings'] = bpz
+    if dset.parcels.index.name != 'parcel_id':
+        dset.d['parcels'] = p.set_index('parcel_id')

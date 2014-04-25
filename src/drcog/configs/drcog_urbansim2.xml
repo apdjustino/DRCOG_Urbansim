@@ -191,8 +191,11 @@
             <argument name="forecast_year" type="integer">2040</argument>
             <argument name="fixed_seed" type="boolean">True</argument>
             <argument name="random_seed" type="integer">1</argument>
-            <argument name="export_indicators" type="boolean">True</argument>
-            <argument name="indicator_output_directory" type="string">'c:/urbansim/data/drcog2/runs'</argument>
+            <argument name="indicator_configuration" type="dictionary">
+              <key name="export_indicators" type="boolean">True</key>
+              <key name="years_to_run" type="list">[2015,2020,2025,2030,2035,2040]</key>
+              <key name="indicator_output_directory" type="string">C:\\urbansim\\data\\drcog2\\runs</key>
+            </argument>
             <argument name="core_components_to_run" type="dictionary">
               <key name="HLCM" type="boolean">True</key>
               <key name="ELCM" type="boolean">True</key>
@@ -237,6 +240,13 @@
               <key name="years_to_run" type="list">[2012,2014,]</key>
               <key name="tm_input_dir" type="string">C:\\urbansim\\data\\travel_model</key>
             </argument>
+            <argument name="table_swapping" type="dictionary">
+              <key name="year" type="integer">2020</key>
+              <key name="swap_skims" type="boolean">True</key>
+              <key name="new_skim_file" type="string">C:\\urbansim\\data\\swap\\travel_data.csv</key>
+              <key name="swap_dist_rail" type="boolean">True</key>
+              <key name="new_dist_rail_file" type="string">C:\\urbansim\\data\\swap\\parcel_dist_rail.csv</key>
+            </argument>
           </run>
         </structure>
       </model>
@@ -244,6 +254,62 @@
   </model_manager>
   <results_manager>
     <simulation_runs name="Simulation Runs" setexpanded="True" type="all_source_data">
+      <run hidden="Children" name="run_2014_04_25_00_16" run_id="40" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_40.run_2014_04_25_00_16</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_25_00_07" run_id="39" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_39.run_2014_04_25_00_07</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_24_23_28" run_id="38" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_38.run_2014_04_24_23_28</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_24_23_16" run_id="37" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_37.run_2014_04_24_23_16</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_24_23_05" run_id="36" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_36.run_2014_04_24_23_05</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_24_23_04" run_id="35" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_35.run_2014_04_24_23_04</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_24_19_17" run_id="34" type="source_data">
+        <scenario_name type="string">run_simulation</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_34.run_2014_04_24_19_17</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
+      <run hidden="Children" name="run_2014_04_23_21_32" run_id="33" type="source_data">
+        <scenario_name type="string">run_calibration</scenario_name>
+        <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_33.run_2014_04_23_21_32</cache_directory>
+        <start_year type="integer">2010</start_year>
+        <end_year type="integer">2011</end_year>
+        <status type="integer">running</status>
+      </run>
       <run hidden="Children" name="run_2014_04_23_21_31" run_id="32" type="source_data">
         <scenario_name type="string">run_simulation</scenario_name>
         <cache_directory type="string">c:\urbansim\data\drcog2\runs\run_32.run_2014_04_23_21_31</cache_directory>

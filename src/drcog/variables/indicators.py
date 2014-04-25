@@ -17,6 +17,7 @@ def run(dset, indicator_output_directory, forecast_year):
     #Base year county indicators
     base_hh_county = hh.groupby('county_id').size()
     base_pop_county = hh.groupby('county_id').persons.sum()
+    base_medinc_county = hh.groupby('county_id').income.median()
     base_emp_county = e.groupby('county_id').employees.sum()
     base_ru_county = b.groupby('county_id').residential_units.sum()
     base_nr_county = b.groupby('county_id').non_residential_sqft.sum()
@@ -29,6 +30,7 @@ def run(dset, indicator_output_directory, forecast_year):
     ##Base year zonal indicators
     base_hh_zone = hh.groupby('zone_id').size()
     base_pop_zone = hh.groupby('zone_id').persons.sum()
+    base_medinc_zone = hh.groupby('zone_id').income.median()
     base_ru_zone = b.groupby('zone_id').residential_units.sum()
     base_emp_zone = e.groupby('zone_id').employees.sum()
     base_emp1_zone = e[e.sector_id_six==1].groupby('zone_id').employees.sum()
@@ -52,6 +54,7 @@ def run(dset, indicator_output_directory, forecast_year):
     e['zone_id'] = b.zone_id[e.building_id].values
     sim_hh_county = hh.groupby('county_id').size()
     sim_pop_county = hh.groupby('county_id').persons.sum()
+    sim_medinc_county = hh.groupby('county_id').income.median()
     sim_emp_county = e.groupby('county_id').employees.sum()
     sim_ru_county = b.groupby('county_id').residential_units.sum()
     sim_nr_county = b.groupby('county_id').non_residential_sqft.sum()
@@ -63,6 +66,7 @@ def run(dset, indicator_output_directory, forecast_year):
     sim_emp6_county = e[e.sector_id_six==6].groupby('county_id').employees.sum()
     sim_hh_zone = hh.groupby('zone_id').size()
     sim_pop_zone = hh.groupby('zone_id').persons.sum()
+    sim_medinc_zone = hh.groupby('zone_id').income.median()
     sim_ru_zone = b.groupby('zone_id').residential_units.sum()
     sim_emp_zone = e.groupby('zone_id').employees.sum()
     sim_emp1_zone = e[e.sector_id_six==1].groupby('zone_id').employees.sum()
@@ -100,6 +104,7 @@ def run(dset, indicator_output_directory, forecast_year):
     zsumm = pd.DataFrame(index=z.index)
     zsumm['hh_base'] = base_hh_zone
     zsumm['pop_base'] = base_pop_zone
+    zsumm['median_income_base'] = base_medinc_zone
     zsumm['ru_base'] = base_ru_zone
     zsumm['emp_base'] = base_emp_zone
     zsumm['emp1_base'] = base_emp1_zone
@@ -111,6 +116,7 @@ def run(dset, indicator_output_directory, forecast_year):
     zsumm['nr_base'] = base_nr_zone
     zsumm['hh_sim'] = sim_hh_zone
     zsumm['pop_sim'] = sim_pop_zone
+    zsumm['median_income_sim'] = sim_medinc_zone
     zsumm['ru_sim'] = sim_ru_zone
     zsumm['emp_sim'] = sim_emp_zone
     zsumm['emp1_sim'] = sim_emp1_zone
@@ -136,6 +142,7 @@ def run(dset, indicator_output_directory, forecast_year):
     csumm = pd.DataFrame(index=sim_hh_county.index)
     csumm['hh_base'] = base_hh_county
     csumm['pop_base'] = base_pop_county
+    csumm['median_income_base'] = base_medinc_county
     csumm['ru_base'] = base_ru_county
     csumm['emp_base'] = base_emp_county
     csumm['emp1_base'] = base_emp1_county
@@ -147,6 +154,7 @@ def run(dset, indicator_output_directory, forecast_year):
     csumm['nr_base'] = base_nr_county
     csumm['hh_sim'] = sim_hh_county
     csumm['pop_sim'] = sim_pop_county
+    csumm['median_income_sim'] = sim_medinc_county
     csumm['ru_sim'] = sim_ru_county
     csumm['emp_sim'] = sim_emp_county
     csumm['emp1_sim'] = sim_emp1_county

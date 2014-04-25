@@ -15,7 +15,7 @@ class Urbansim2(Model):
     def __init__(self,scenario='Base Scenario'):
         self.scenario = scenario
 
-    def run(self, name=None, export_buildings_to_urbancanvas=False, base_year=2010, forecast_year=None, fixed_seed=True, random_seed=1, export_indicators=True, indicator_output_directory='C:/opus/data/drcog2/runs', core_components_to_run=None, household_transition=None,household_relocation=None,employment_transition=None, elcm_configuration=None, developer_configuration=None, travel_model_configuration=None):
+    def run(self, name=None, export_buildings_to_urbancanvas=False, base_year=2010, forecast_year=None, fixed_seed=True, random_seed=1, indicator_configuration=None, core_components_to_run=None, household_transition=None,household_relocation=None,employment_transition=None, elcm_configuration=None, developer_configuration=None, travel_model_configuration=None, table_swapping=None):
         """Runs an UrbanSim2 scenario 
         """
         logger.log_status('Starting UrbanSim2 run.')
@@ -80,12 +80,12 @@ class Urbansim2(Model):
                 dset.d['buildings'] = pd.concat([buildings,newbuildings])
 
             ############   INDICATORS
-            if export_indicators:
+            if indicator_configuration['export_indicators']:
                 unplaced_hh.append((dset.households.building_id==-1).sum())
                 unplaced_emp.append(dset.establishments[dset.establishments.building_id==-1].employees.sum())
-                if sim_year == forecast_year:
+                if sim_year in indicator_configuration['years_to_run']:
                     logger.log_status('Exporting indicators')
-                    indicators.run(dset, indicator_output_directory, forecast_year)
+                    indicators.run(dset, indicator_configuration['indicator_output_directory'], sim_year)
                     logger.log_status('unplaced hh')
                     logger.log_status(unplaced_hh)
                     logger.log_status('unplaced emp')
@@ -96,6 +96,17 @@ class Urbansim2(Model):
                 if sim_year in travel_model_configuration['years_to_run']:
                     logger.log_status('Exporting to TM')
                     export_zonal_file.export_zonal_file_to_tm(dset,sim_year,tm_input_dir=travel_model_configuration['tm_input_dir'])
+                    
+            ############     SWAPPER
+            if sim_year == table_swapping['year']:
+                if table_swapping['swap_skims']:
+                    logger.log_status('Swapping skims')
+                    td2 = pd.read_csv(table_swapping['new_skim_file'], index_col=['from_zone_id','to_zone_id'])
+                    dset.d['travel_data'] = td2
+                if table_swapping['swap_dist_rail']:
+                    logger.log_status('Swapping parcel distance to rail')
+                    p2 = pd.read_csv(table_swapping['new_dist_rail_file'], index_col=['parcel_id'])
+                    dset.d['parcels']['dist_rail'] = p2.dist_rail
             
             ############      URBANCANVAS
             if export_buildings_to_urbancanvas:
