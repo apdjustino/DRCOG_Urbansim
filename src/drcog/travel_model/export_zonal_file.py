@@ -118,7 +118,23 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     jobs.jobtypename[jobs.sector_id_six==6] = 'Service'
     jobs['urbancenter_id'] = 0
     del jobs['sector_id_six']
+    del jobs['building_id']
+    del jobs['establishment_id']
+    del jobs['home_based_status']
+    del jobs['sector_id']
+    jobs.rename(columns={'job_id':'tempid'},inplace=True)
     jobs.to_csv(tm_input_dir+'\\jobs%s.csv'%sim_year,index=False)
+
+    #####Export household points
+    hh = households[['building_id']].reset_index()
+    hh['x'] = bpz.centroid_x[hh.building_id].values
+    hh['y'] = bpz.centroid_y[hh.building_id].values
+    hh['taz05_id'] = bpz.external_zone_id[hh.building_id].values
+    hh['dist_trans'] = np.minimum(bpz.dist_rail[hh.building_id].values, bpz.dist_bus[hh.building_id].values)/5280.0
+    hh['urbancenter_id'] = 0
+    del hh['building_id']
+    hh.rename(columns={'index':'tempid'},inplace=True)
+    hh.to_csv(tm_input_dir+'\\households%s.csv'%sim_year,index=False)
     
     #####Export synthetic households
     h = households[['age_of_head','building_id','cars','children','county','income','income_group_id','persons','race_id','tenure','workers']]
