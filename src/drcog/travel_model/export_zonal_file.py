@@ -88,6 +88,9 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     
     tm_export.to_csv(tm_input_dir+'\\ZonalDataTemplate%s.csv'%sim_year,index=False)
     
+    ##Available parcel coordinates (includes random x,y for big parcels)
+    parcel_coords = dset.parcel_coords
+    big_parcels = parcels.index.values[parcels.parcel_sqft>= 435600]
     #####Export jobs table
     e = establishments.reset_index()
     bids = []
@@ -105,6 +108,7 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     print len(hbs)
     print len(sids)
     jobs = pd.DataFrame({'job_id':range(1,len(bids)+1),'building_id':bids,'establishment_id':eids,'home_based_status':hbs,'sector_id':sids})
+    jobs['parcel_id'] = bpz.parcel_id[jobs.building_id].values
     jobs['x'] = bpz.centroid_x[jobs.building_id].values
     jobs['y'] = bpz.centroid_y[jobs.building_id].values
     jobs['taz05_id'] = bpz.external_zone_id[jobs.building_id].values
@@ -117,6 +121,15 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
     jobs.jobtypename[jobs.sector_id_six==5] = 'Retail'
     jobs.jobtypename[jobs.sector_id_six==6] = 'Service'
     jobs['urbancenter_id'] = 0
+    big_parcel_ids_with_jobs = np.unique(jobs.parcel_id[np.in1d(jobs.parcel_id,big_parcels)].values)
+    for parcel_id in big_parcel_ids_with_jobs:
+        idx_jobs_on_parcel = np.in1d(jobs.parcel_id,[parcel_id,])
+        coords = parcel_coords[parcel_coords.parcel_id==parcel_id]
+        idx_coord = np.random.choice(coords.index,size=idx_jobs_on_parcel.sum(),replace=True)
+        x = coords.x.loc[idx_coord].values
+        y = coords.y.loc[idx_coord].values
+        jobs.x[idx_jobs_on_parcel] = x
+        jobs.y[idx_jobs_on_parcel] = y
     del jobs['sector_id_six']
     del jobs['building_id']
     del jobs['establishment_id']
@@ -127,11 +140,21 @@ def export_zonal_file_to_tm(dset,sim_year,tm_input_dir='C:\\urbansim\\data\\trav
 
     #####Export household points
     hh = households[['building_id']].reset_index()
+    hh['parcel_id'] = bpz.parcel_id[hh.building_id].values
     hh['x'] = bpz.centroid_x[hh.building_id].values
     hh['y'] = bpz.centroid_y[hh.building_id].values
     hh['taz05_id'] = bpz.external_zone_id[hh.building_id].values
     hh['dist_trans'] = np.minimum(bpz.dist_rail[hh.building_id].values, bpz.dist_bus[hh.building_id].values)/5280.0
     hh['urbancenter_id'] = 0
+    big_parcel_ids_with_hh = np.unique(hh.parcel_id[np.in1d(hh.parcel_id,big_parcels)].values)
+    for parcel_id in big_parcel_ids_with_hh:
+        idx_hh_on_parcel = np.in1d(hh.parcel_id,[parcel_id,])
+        coords = parcel_coords[parcel_coords.parcel_id==parcel_id]
+        idx_coord = np.random.choice(coords.index,size=idx_hh_on_parcel.sum(),replace=True)
+        x = coords.x.loc[idx_coord].values
+        y = coords.y.loc[idx_coord].values
+        hh.x[idx_hh_on_parcel] = x
+        hh.y[idx_hh_on_parcel] = y
     del hh['building_id']
     hh.rename(columns={'index':'tempid'},inplace=True)
     hh.to_csv(tm_input_dir+'\\households%s.csv'%sim_year,index=False)
