@@ -53,7 +53,7 @@ def export_to_urbancanvas(building_df,current_year,urbancanvas_scenario_id):
     output = cStringIO.StringIO()
     building_df.to_csv(output, sep='\t', header=False, index=False)
     output.seek(0)
-    cur.copy_from(output, 'building_footprints', columns =tuple(building_df.columns.values.tolist()))
+    cur.copy_from(output, 'building', columns =tuple(building_df.columns.values.tolist()))
     conn.commit()
     
     return nextval

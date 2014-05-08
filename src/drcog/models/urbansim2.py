@@ -15,7 +15,7 @@ class Urbansim2(Model):
     def __init__(self,scenario='Base Scenario'):
         self.scenario = scenario
 
-    def run(self, name=None, export_buildings_to_urbancanvas=False, base_year=2010, forecast_year=None, fixed_seed=True, random_seed=1, indicator_configuration=None, core_components_to_run=None, household_transition=None,household_relocation=None,employment_transition=None, elcm_configuration=None, developer_configuration=None, travel_model_configuration=None, table_swapping=None):
+    def run(self, name=None, export_buildings_to_urbancanvas=False, base_year=2010, forecast_year=None, fixed_seed=True, random_seed=1, indicator_configuration=None, core_components_to_run=None, household_transition=None,household_relocation=None,employment_transition=None, elcm_configuration=None, developer_configuration=None, table_swapping=None, travel_model_configuration1=None, travel_model_configuration2=None, travel_model_configuration3=None, travel_model_configuration4=None, travel_model_configuration5=None, travel_model_configuration6=None):
         """Runs an UrbanSim2 scenario 
         """
         logger.log_status('Starting UrbanSim2 run.')
@@ -92,10 +92,7 @@ class Urbansim2(Model):
                     logger.log_status(unplaced_emp)
                     
             ############     TRAVEL MODEL
-            if travel_model_configuration['export_to_tm']:
-                if sim_year in travel_model_configuration['years_to_run']:
-                    logger.log_status('Exporting to TM')
-                    export_zonal_file.export_zonal_file_to_tm(dset,sim_year,tm_input_dir=travel_model_configuration['tm_input_dir'])
+            export_zonal_file.export_zonal_file_to_tm(dset,sim_year,logger,tm_config=[travel_model_configuration1,travel_model_configuration2,travel_model_configuration3,travel_model_configuration4,travel_model_configuration5,travel_model_configuration6])
                     
             ############     SWAPPER
             if sim_year == table_swapping['year']:
