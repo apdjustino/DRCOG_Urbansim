@@ -7,6 +7,8 @@ def calculate_variables(dset):
 
     ##PARCEL VARIABLES
     p = dset.fetch('parcels')
+    if p.index.name != 'parcel_id':
+        p = p.set_index('parcel_id')
     p['in_denver'] = (p.county_id==8031).astype('int32')
     p['ln_dist_rail'] = p.dist_rail.apply(np.log1p)
     p['ln_dist_bus'] = p.dist_bus.apply(np.log1p)
@@ -143,4 +145,4 @@ def calculate_variables(dset):
     bpz.residential_units_capacity[bpz.residential_units_capacity<0] = 0
     dset.d['buildings'] = bpz
     if dset.parcels.index.name != 'parcel_id':
-        dset.d['parcels'] = p.set_index('parcel_id')
+        dset.d['parcels'] = p

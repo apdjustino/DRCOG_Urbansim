@@ -1,4 +1,6 @@
 import numpy as np, pandas as pd
+import psycopg2
+import cStringIO
 
 def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
 
@@ -23,6 +25,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         del households['zone_id']
         del households['county_id']
         parcels = dset.fetch('parcels')
+        parcels_urbancen = dset.store.parcels_urbancen.set_index('parcel_id')
+        parcels['urbancenter_id'] = parcels_urbancen.urban_cen
         zones = dset.fetch('zones')
         pz = pd.merge(parcels.reset_index(),zones,left_on='zone_id',right_index=True,how='left')
         pz = pz.set_index('parcel_id')
@@ -125,6 +129,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         print len(sids)
         jobs = pd.DataFrame({'job_id':range(1,len(bids)+1),'building_id':bids,'establishment_id':eids,'home_based_status':hbs,'sector_id':sids})
         jobs['parcel_id'] = bpz.parcel_id[jobs.building_id].values
+        jobs['urbancenter_id'] = bpz.urbancenter_id[jobs.building_id].values
         jobs['x'] = bpz.centroid_x[jobs.building_id].values
         jobs['y'] = bpz.centroid_y[jobs.building_id].values
         jobs['taz05_id'] = bpz.external_zone_id[jobs.building_id].values
@@ -136,7 +141,6 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         jobs.jobtypename[jobs.sector_id_six==4] = 'Restaurant'
         jobs.jobtypename[jobs.sector_id_six==5] = 'Retail'
         jobs.jobtypename[jobs.sector_id_six==6] = 'Service'
-        jobs['urbancenter_id'] = 0
         big_parcel_ids_with_jobs = np.unique(jobs.parcel_id[np.in1d(jobs.parcel_id,big_parcels)].values)
         for parcel_id in big_parcel_ids_with_jobs:
             idx_jobs_on_parcel = np.in1d(jobs.parcel_id,[parcel_id,])
@@ -153,15 +157,61 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         del jobs['sector_id']
         jobs.rename(columns={'job_id':'tempid'},inplace=True)
         jobs.to_csv(tm_input_dir+'\\jobs%s.csv'%sim_year,index=False)
+        
+        conn_string = "host='paris.urbansim.org' dbname='denver' user='drcog' password='M0untains#' port=5433"
+        conn = psycopg2.connect(conn_string)
+        cursor = conn.cursor()
+        
+        print 'Loading jobs_xy to db'
+        cursor.execute("DROP TABLE IF EXISTS jobs_xy;")
+        conn.commit()
+
+        cursor.execute("CREATE TABLE jobs_xy (tempid integer,parcel_id integer,urbancenter_id text,x integer,y integer,taz05_id integer,jobtypename text);")
+        conn.commit()
+
+        output = cStringIO.StringIO()
+        jobs.to_csv(output, sep='\t', header=False, index=False)
+        output.seek(0)
+        cursor.copy_from(output, 'jobs_xy', columns =tuple(jobs.columns.values.tolist()))
+        conn.commit()
+        
+        job_buffer_sql = '''
+        alter table jobs_xy add column the_geom geometry;
+        update jobs_xy set the_geom = ST_SetSRID(ST_MakePoint(x, y), 2232);
+        DROP TABLE IF EXISTS job_centroids;
+        select taz05_id, avg(x) as x, avg(y) as y into job_centroids from jobs_xy group by taz05_id;
+        alter table job_centroids add column the_geom geometry;
+        update job_centroids set the_geom = ST_SetSRID(ST_MakePoint(x, y), 2232);
+        CREATE INDEX drcog_jobs_geo_idx ON jobs_xy USING GIST (the_geom);
+        CREATE INDEX drcog_job_centroids_geo_idx ON job_centroids USING GIST (the_geom);
+        DROP TABLE IF EXISTS job_buffer;
+        create table job_buffer as(select
+            jobs_xy.taz05_id,
+            count(*) as total_jobs,
+            count(jobtypename = 'Education' or null) as "Education",
+            count(jobtypename = 'Entertainment' or null) as "Entertainment",
+            count(jobtypename = 'Service' or null) as "Service",
+            count(jobtypename = 'Production' or null) as "Production",
+            count(jobtypename = 'Restaurant' or null) as "Restaurant",
+            count(jobtypename = 'Retail' or null) as "Retail"
+        from
+            job_centroids
+            inner join
+            jobs_xy on st_dwithin(job_centroids.the_geom, jobs_xy.the_geom, 2640)
+        group by jobs_xy.taz05_id);
+        '''
+        cursor.execute(job_buffer_sql)
+        conn.commit()
+        
 
         #####Export household points
         hh = households[['building_id']].reset_index()
         hh['parcel_id'] = bpz.parcel_id[hh.building_id].values
+        hh['urbancenter_id'] = bpz.urbancenter_id[hh.building_id].values
         hh['x'] = bpz.centroid_x[hh.building_id].values
         hh['y'] = bpz.centroid_y[hh.building_id].values
         hh['taz05_id'] = bpz.external_zone_id[hh.building_id].values
         hh['dist_trans'] = np.minimum(bpz.dist_rail[hh.building_id].values, bpz.dist_bus[hh.building_id].values)/5280.0
-        hh['urbancenter_id'] = 0
         big_parcel_ids_with_hh = np.unique(hh.parcel_id[np.in1d(hh.parcel_id,big_parcels)].values)
         for parcel_id in big_parcel_ids_with_hh:
             idx_hh_on_parcel = np.in1d(hh.parcel_id,[parcel_id,])
@@ -174,6 +224,19 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         del hh['building_id']
         hh.rename(columns={'index':'tempid'},inplace=True)
         hh.to_csv(tm_input_dir+'\\households%s.csv'%sim_year,index=False)
+        
+        print 'Loading hh_xy to db'
+        cursor.execute("DROP TABLE IF EXISTS hh_xy;")
+        conn.commit()
+
+        cursor.execute("CREATE TABLE hh_xy (tempid integer,parcel_id integer,urbancenter_id text,x integer,y integer,taz05_id integer,dist_trans numeric);")
+        conn.commit()
+
+        output = cStringIO.StringIO()
+        hh.to_csv(output, sep='\t', header=False, index=False)
+        output.seek(0)
+        cursor.copy_from(output, 'hh_xy', columns =tuple(hh.columns.values.tolist()))
+        conn.commit()
         
         #####Export synthetic households
         h = households[['age_of_head','building_id','cars','children','county','income','income_group_id','persons','race_id','tenure','workers']]
