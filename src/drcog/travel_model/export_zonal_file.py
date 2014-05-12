@@ -1,4 +1,5 @@
 import numpy as np, pandas as pd
+import pandas.io.sql as sql
 import psycopg2
 import cStringIO
 
@@ -104,8 +105,6 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         tm_export = pd.merge(fixed_vars,tm_export,left_on='ZoneID',right_index=True)
         tm_export = pd.merge(tm_export,variable_vars,left_on='ZoneID',right_on='ZoneID')
         
-        tm_export.to_csv(tm_input_dir+'\\ZonalDataTemplate%s.csv'%sim_year,index=False)
-        
         ##Available parcel coordinates (includes random x,y for big parcels)
         parcel_coords = dset.parcel_coords
         parcel_coords.x = parcel_coords.x.astype('int64')
@@ -187,17 +186,28 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         DROP TABLE IF EXISTS job_buffer;
         create table job_buffer as(select
             jobs_xy.taz05_id,
-            count(*) as total_jobs,
-            count(jobtypename = 'Education' or null) as "Education",
-            count(jobtypename = 'Entertainment' or null) as "Entertainment",
-            count(jobtypename = 'Service' or null) as "Service",
-            count(jobtypename = 'Production' or null) as "Production",
-            count(jobtypename = 'Restaurant' or null) as "Restaurant",
-            count(jobtypename = 'Retail' or null) as "Retail"
+            count(*) as empdensempcentroid,
+            count(jobtypename = 'Education' or null) as "eddensempcentroid",
+            count(jobtypename = 'Entertainment' or null) as "entdensempcentroid",
+            count(jobtypename = 'Service' or null) as "servdensempcentroid",
+            count(jobtypename = 'Production' or null) as "proddensempcentroid",
+            count(jobtypename = 'Restaurant' or null) as "restaurantdensempcentroid",
+            count(jobtypename = 'Retail' or null) as "retaildensempcentroid"
         from
             job_centroids
             inner join
             jobs_xy on st_dwithin(job_centroids.the_geom, jobs_xy.the_geom, 2640)
+        group by jobs_xy.taz05_id);
+        DROP TABLE IF EXISTS job_hh_buffer;
+        create table job_hh_buffer as(select
+            jobs_xy.taz05_id,
+            count(jobtypename = 'Service' or null) as "servdenshhcentroid",
+            count(jobtypename = 'Restaurant' or null) as "restaurantemploymenthouseholdbuffer",
+            count(jobtypename = 'Retail' or null) as "retailemploymenthouseholdbuffer"
+        from
+            hh_centroids
+            inner join
+            jobs_xy on st_dwithin(hh_centroids.the_geom, jobs_xy.the_geom, 2640)
         group by jobs_xy.taz05_id);
         '''
         cursor.execute(job_buffer_sql)
@@ -237,6 +247,64 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         output.seek(0)
         cursor.copy_from(output, 'hh_xy', columns =tuple(hh.columns.values.tolist()))
         conn.commit()
+        
+        hh_buffer_sql = '''
+        alter table hh_xy add column the_geom geometry;
+        update hh_xy set the_geom = ST_SetSRID(ST_MakePoint(x, y), 2232);
+        DROP TABLE IF EXISTS hh_centroids;
+        select taz05_id, avg(x) as x, avg(y) as y into hh_centroids from hh_xy group by taz05_id;
+        alter table hh_centroids add column the_geom geometry;
+        update hh_centroids set the_geom = ST_SetSRID(ST_MakePoint(x, y), 2232);
+        CREATE INDEX drcog_hh_geo_idx ON hh_xy USING GIST (the_geom);
+        CREATE INDEX drcog_hh_centroids_geo_idx ON hh_centroids USING GIST (the_geom);
+        DROP TABLE IF EXISTS hh_buffer;
+        create table hh_buffer as(SELECT hh_xy.taz05_id, count(*) as hhvirhhbuffer
+        FROM hh_centroids INNER JOIN hh_xy 
+        ON ST_DWithin(hh_centroids.the_geom, hh_xy.the_geom, 2640)
+        group by hh_xy.taz05_id);
+        DROP TABLE IF EXISTS hh_job_buffer;
+        create table hh_job_buffer as(SELECT hh_xy.taz05_id, count(*) as hhvirempbuffer
+        FROM job_centroids INNER JOIN hh_xy 
+        ON ST_DWithin(job_centroids.the_geom, hh_xy.the_geom, 2640)
+        group by hh_xy.taz05_id);
+        '''
+        cursor.execute(hh_buffer_sql)
+        conn.commit()
+        
+        ##Incorporate buffer variables into the taz export
+        
+        hh_buffer = sql.read_frame('select * from hh_buffer',conn)
+        hh_job_buffer = sql.read_frame('select * from hh_job_buffer',conn)
+        job_buffer = sql.read_frame('select * from job_buffer',conn)
+        job_hh_buffer = sql.read_frame('select * from job_hh_buffer',conn)
+        
+        hh_buffer = hh_buffer.set_index('taz05_id')
+        hh_job_buffer = hh_job_buffer.set_index('taz05_id')
+        job_buffer = job_buffer.set_index('taz05_id')
+        job_hh_buffer = job_hh_buffer.set_index('taz05_id')
+        
+        taz = fixed_vars[['TAZ05_ID']]
+        taz.columns = ['taz05_id']
+        taz = taz.set_index('taz05_id')
+        for df in [hh_buffer, hh_job_buffer, job_buffer, job_hh_buffer]:
+            for column in df.columns:
+                taz[column] = df[column]
+        taz = taz.fillna(0)
+        taz = taz.rename(columns={'hhvirhhbuffer': 'HouseholdsVirtualHHCentroidBuffer', 'hhvirempbuffer': 'HouseholdsEmpVirtualCentroidBuffer', 'empdensempcentroid': 'EmpDensEmpCentroid', 
+                                  'eddensempcentroid': 'EdDensEmpCentroid', 'entdensempcentroid': 'EntDensEmpCentroid', 'servdensempcentroid': 'ServDensEmpCentroid', 
+                                  'proddensempcentroid': 'ProdDensEmpCentroid', 'restaurantdensempcentroid': 'RestaurantDensEmpCentroid', 'retaildensempcentroid': 'RetailDensEmpCentroid', 
+                                  'restaurantemploymenthouseholdbuffer': 'RestaurantEmploymentHouseholdBuffer', 'retailemploymenthouseholdbuffer': 'RetailEmploymentHouseholdBuffer',
+                                  'servdenshhcentroid': 'ServDensHHCentroid', })
+        tm_export = pd.merge(tm_export,taz,left_on='TAZ05_ID',right_index=True)
+        tm_export['resden'] = tm_export.HouseholdsVirtualHHCentroidBuffer/1000.0
+        tm_export['retden'] = (tm_export.RestaurantEmploymentHouseholdBuffer + tm_export.RetailEmploymentHouseholdBuffer)/1000.0
+        tm_export['MixedUseDensityHouseholdCentroid'] = (tm_export.retden*tm_export.resden)/np.maximum(np.array([.0001]*2804),(tm_export.retden+tm_export.resden))
+        tm_export['resden'] = tm_export.HouseholdsEmpVirtualCentroidBuffer/1000.0
+        tm_export['retden'] = (tm_export.RestaurantDensEmpCentroid + tm_export.RetailDensEmpCentroid)/1000.0
+        tm_export['MixedUseDensityEmploymentCentroid'] = (tm_export.retden*tm_export.resden)/np.maximum(np.array([.0001]*2804),(tm_export.retden+tm_export.resden))
+        del tm_export['resden']
+        del tm_export['retden']
+        tm_export.to_csv(tm_input_dir+'\\ZonalDataTemplate%s.csv'%sim_year,index=False)
         
         #####Export synthetic households
         h = households[['age_of_head','building_id','cars','children','county','income','income_group_id','persons','race_id','tenure','workers']]
