@@ -130,7 +130,7 @@ class Urbansim2(Model):
             hh = dset.store.households
             e = dset.store.establishments
             b = dset.store.buildings
-            p = dset.store.parcels
+            p = dset.store.parcels.set_index('parcel_id')
             b['county_id'] = p.county_id[b.parcel_id].values
             hh['county_id'] = b.county_id[hh.building_id].values
             e['county_id'] = b.county_id[e.building_id].values

@@ -6,7 +6,7 @@ def run(dset, indicator_output_directory, forecast_year):
     hh = dset.store.households
     e = dset.store.establishments
     b = dset.store.buildings
-    p = dset.store.parcels
+    p = dset.store.parcel.set_index('parcel_id')
     b['zone_id'] = p.zone_id[b.parcel_id].values
     hh['zone_id'] = b.zone_id[hh.building_id].values
     e['zone_id'] = b.zone_id[e.building_id].values

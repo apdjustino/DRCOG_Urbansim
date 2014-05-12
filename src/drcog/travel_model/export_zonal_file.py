@@ -129,8 +129,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         jobs = pd.DataFrame({'job_id':range(1,len(bids)+1),'building_id':bids,'establishment_id':eids,'home_based_status':hbs,'sector_id':sids})
         jobs['parcel_id'] = bpz.parcel_id[jobs.building_id].values
         jobs['urbancenter_id'] = bpz.urbancenter_id[jobs.building_id].values
-        jobs['x'] = bpz.centroid_x[jobs.building_id].values
-        jobs['y'] = bpz.centroid_y[jobs.building_id].values
+        jobs['x'] = bpz.centroid_x[jobs.building_id].values.astype('int64')
+        jobs['y'] = bpz.centroid_y[jobs.building_id].values.astype('int64')
         jobs['taz05_id'] = bpz.external_zone_id[jobs.building_id].values
         jobs['sector_id_six'] = 1*(jobs.sector_id==61) + 2*(jobs.sector_id==71) + 3*np.in1d(jobs.sector_id,[11,21,22,23,31,32,33,42,48,49]) + 4*np.in1d(jobs.sector_id,[7221,7222,7224]) + 5*np.in1d(jobs.sector_id,[44,45,7211,7212,7213,7223]) + 6*np.in1d(jobs.sector_id,[51,52,53,54,55,56,62,81,92])
         jobs['jobtypename'] = ''
