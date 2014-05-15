@@ -3,7 +3,7 @@ import numbers
 
 import numpy as np
 import pandas as pd
-import patsy
+#import patsy
 
 
 def apply_filter_query(df, filters=None):

@@ -17,8 +17,9 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         persons = dset.fetch('persons')
         tran = transition.TabularTotalsTransition(ct, 'total_number_of_households')
         model = transition.TransitionModel(tran)
+        #import pdb; pdb.set_trace()
         new, added, new_linked = model.transition(
-                hh, 2012, linked_tables={'linked': (persons, 'household_id')})
+                hh, year, linked_tables={'linked': (persons, 'household_id')})
         new.loc[added,'building_id'] = -1
         dset.d['households'] = new
         dset.d['persons'] = new_linked['linked']
