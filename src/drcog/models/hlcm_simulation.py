@@ -1,6 +1,7 @@
 import synthicity.urbansim.interaction as interaction
 import pandas as pd, numpy as np, copy
 from synthicity.utils import misc
+from drcog.models import transition
 
 def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table = 'households',
               output_names=None,agents_groupby = ['income_3_tenure',],transition_config=None,relocation_config=None):
@@ -9,11 +10,22 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
 
     if transition_config['Enabled']:
         ct = dset.fetch(transition_config['control_totals_table'])
+        if 'persons' in ct.columns:
+            del ct['persons']
         ct["total_number_of_households"] = (ct["total_number_of_households"]*transition_config['scaling_factor']).astype('int32')
-        new_hhlds = {"table": "dset.households","writetotmp": "households","model": "transitionmodel","first_year": 2010,"control_totals": "dset.%s"%transition_config['control_totals_table'],
-                     "geography_field": "building_id","amount_field": "total_number_of_households"}
-        import synthicity.urbansim.transitionmodel as transitionmodel
-        transitionmodel.simulate(dset,new_hhlds,year=year,show=True,subtract=True)
+        hh = dset.fetch('households')
+        persons = dset.fetch('persons')
+        tran = transition.TabularTotalsTransition(ct, 'total_number_of_households')
+        model = transition.TransitionModel(tran)
+        new, added, new_linked = model.transition(
+                hh, 2012, linked_tables={'linked': (persons, 'household_id')})
+        new.loc[added,'building_id'] = -1
+        dset.d['households'] = new
+        dset.d['persons'] = new_linked['linked']
+        # new_hhlds = {"table": "dset.households","writetotmp": "households","model": "transitionmodel","first_year": 2010,"control_totals": "dset.%s"%transition_config['control_totals_table'],
+                     # "geography_field": "building_id","amount_field": "total_number_of_households"}
+        # import synthicity.urbansim.transitionmodel as transitionmodel
+        # transitionmodel.simulate(dset,new_hhlds,year=year,show=True,subtract=True)
         
     choosers = dset.fetch(simulation_table)
         
