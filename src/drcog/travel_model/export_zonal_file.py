@@ -2,6 +2,7 @@ import numpy as np, pandas as pd
 import pandas.io.sql as sql
 import psycopg2
 import cStringIO
+from drcog.variables import pums_vars
 
 def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
 
@@ -306,9 +307,48 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         del tm_export['retden']
         tm_export.to_csv(tm_input_dir+'\\ZonalDataTemplate%s.csv'%sim_year,index=False)
         
-        #####Export synthetic households
-        h = households[['age_of_head','building_id','cars','children','income','persons','tenure','workers']]
-        h.to_csv(tm_input_dir+'\\SynHH%s.csv'%sim_year,index=False)
+        
+        #####Export synthetic households and persons
+        h = dset.fetch('households')[['serialno','building_id']]
+        b = dset.fetch('buildings')[['residential_units','parcel_id','building_type_id']]
+        p = dset.fetch('parcels')[['zone_id']]
+        z = dset.fetch('zones')[['external_zone_id']]
+        p['taz'] = z.external_zone_id[p.zone_id].values
+        hb = pd.merge(h,b,left_on='building_id',right_index=True)
+        hbp = pd.merge(hb,p,left_on='parcel_id',right_index=True)
+        bp = pd.merge(b,p,left_on='parcel_id',right_index=True)
+        h_for_export = hbp[['taz','serialno','residential_units','building_type_id']]
+        
+        pums_hh, pums_p = pums_vars.get_pums()
+        hh_for_export = pd.merge(h_for_export,pums_hh,left_on='serialno',right_index=True)
+        hh_for_export['bldgsz'] = 2
+        hh_for_export.bldgsz[hh_for_export.residential_units==2] = 4
+        hh_for_export.bldgsz[np.in1d(hh_for_export.residential_units,[3,4])] = 5
+        hh_for_export.bldgsz[np.in1d(hh_for_export.residential_units,[5,6,7,8,9])] = 6
+        hh_for_export.bldgsz[(hh_for_export.residential_units>=10)*(hh_for_export.residential_units<=19)] = 7
+        hh_for_export.bldgsz[(hh_for_export.residential_units>=20)*(hh_for_export.residential_units<=49)] = 8
+        hh_for_export.bldgsz[(hh_for_export.residential_units>=50)] = 9
+        hh_for_export.bldgsz[(hh_for_export.residential_units==1)*(hh_for_export.building_type_id==24)] = 3
+        hh_for_export['htypdwel'] = 1*(hh_for_export.bldgsz==2) + 2*(hh_for_export.bldgsz!=2)
+        hh_for_export.index.name = 'hhid'
+        hh_for_export = hh_for_export[['taz','serialno','puma5','hinc','persons','hht','unittype','noc','bldgsz','ten','hinccat1',
+                                       'hinccat2','hhagecat','hhagecat3','hsizecat','hsizecat6','hfamily','hunittype','hnoccat','hnccat6',
+                                       'hnacat6','hwrkrcat','hwrkcat5','h0005','h0611','h1215','h1617','h1824','h2534','h3549','h5064','h6579',
+                                       'h80up','hworkers','hwork_f','hwork_p','huniv','hnwork','hretire','hpresch','hschpred','hschdriv',
+                                       'htypdwel','hownrent','hadnwst','hadwpst','hadkids','bucketBin','originalpuma']]
+        hh_for_export = hh_for_export.rename(columns={'ten':'tenure'})
+        hh_for_export = hh_for_export.fillna(0)
+        persons = dset.fetch('persons')
+        pums_p['serial'] = pums_p.index.values
+        pums_p['phispan'] = (pums_p.hispan>1).astype('int32')
+        persons['personid'] = persons.index.values
+        persons_for_export = pd.merge(persons,pums_p,left_on=['serialno','pnum'],right_on=['serial','pnum'])
+        persons_for_export = persons_for_export[['personid','household_id','age','relate','esr','grade','pnum','paug','ddp','sex','weeks','hours',
+                                                 'race1','hispan','msp','poverty','earns','indnaics','pagecat','pemploy','pstudent','phispan','ptype','padkid']]
+        persons_for_export = persons_for_export.fillna(0)
+        persons_for_export = persons_for_export.rename(columns={'household_id':'hhid'})
+        hh_for_export.to_csv(tm_input_dir+'\\SynHH%s.csv'%sim_year)
+        persons_for_export.to_csv(tm_input_dir+'\\SynPers%s.csv'%sim_year,index=False)
         
         
         #####################
