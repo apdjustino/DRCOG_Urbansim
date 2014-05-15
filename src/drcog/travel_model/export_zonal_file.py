@@ -307,7 +307,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         tm_export.to_csv(tm_input_dir+'\\ZonalDataTemplate%s.csv'%sim_year,index=False)
         
         #####Export synthetic households
-        h = households[['age_of_head','building_id','cars','children','county','income','income_group_id','persons','race_id','tenure','workers']]
+        h = households[['age_of_head','building_id','cars','children','income','persons','tenure','workers']]
         h.to_csv(tm_input_dir+'\\SynHH%s.csv'%sim_year,index=False)
         
         
