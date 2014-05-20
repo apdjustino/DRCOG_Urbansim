@@ -234,7 +234,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
             hh.y[idx_hh_on_parcel] = y
         del hh['building_id']
         hh.rename(columns={'index':'tempid'},inplace=True)
-        hh.to_csv(tm_input_dir+'\\households%s.csv'%sim_year,index=False)
+        hh.to_csv(tm_input_dir+'\\housing_units%s.csv'%sim_year,index=False)
         
         print 'Loading hh_xy to db'
         cursor.execute("DROP TABLE IF EXISTS hh_xy;")
