@@ -47,14 +47,14 @@ class Urbansim2(Model):
             #Record pre-demand model zone-level household/job totals
             hh_zone1 = dset.fetch('households').groupby('zone_id').size()
             emp_zone1 = dset.fetch('establishments').groupby('zone_id').employees.sum()
-                    
+            
             ############     ELCM SIMULATION
             if core_components_to_run['ELCM']:
                 logger.log_status('ELCM simulation.')
                 alternatives = dset.buildings[(dset.buildings.non_residential_sqft>0)]
                 elcm_simulation.simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'establishments',output_names = ("drcog-coeff-elcm-%s.csv","DRCOG EMPLOYMENT LOCATION CHOICE MODELS (%s)","emp_location_%s","establishment_building_ids"),
                                          agents_groupby= ['sector_id_retail_agg',],transition_config = {'Enabled':True,'control_totals_table':'annual_employment_control_totals','scaling_factor':1.0})
-                    
+            #import pdb; pdb.set_trace()  ####Estabs lost estab_id here
             #################     HLCM SIMULATION
             if core_components_to_run['HLCM']:
                 logger.log_status('HLCM simulation.')
@@ -62,7 +62,7 @@ class Urbansim2(Model):
                 hlcm_simulation.simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'households',output_names = ("drcog-coeff-hlcm-%s.csv","DRCOG HOUSEHOLD LOCATION CHOICE MODELS (%s)","hh_location_%s","household_building_ids"),
                                          agents_groupby= ['income_3_tenure',],transition_config = {'Enabled':True,'control_totals_table':'annual_household_control_totals','scaling_factor':1.0},
                                          relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)
-
+            #import pdb; pdb.set_trace()  ####HH lost hh_id here
             ############     REPM SIMULATION
             if core_components_to_run['Price']:
                 logger.log_status('REPM simulation.')
@@ -72,13 +72,15 @@ class Urbansim2(Model):
                 #Non-residential                                    
                 regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
                                                      agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])
-                
+            
             ############     DEVELOPER SIMULATION
             if core_components_to_run['Developer']:
                 logger.log_status('Proforma simulation.')
                 buildings, newbuildings = proforma_developer_model.run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year)
+                #import pdb; pdb.set_trace()
                 dset.d['buildings'] = pd.concat([buildings,newbuildings])
-
+                dset.buildings.index.name = 'building_id'
+            #import pdb; pdb.set_trace()  ####Bldings lost b_id here
             ############   INDICATORS
             if indicator_configuration['export_indicators']:
                 unplaced_hh.append((dset.households.building_id==-1).sum())

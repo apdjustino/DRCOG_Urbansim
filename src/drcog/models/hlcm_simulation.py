@@ -27,7 +27,8 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
                      # "geography_field": "building_id","amount_field": "total_number_of_households"}
         # import synthicity.urbansim.transitionmodel as transitionmodel
         # transitionmodel.simulate(dset,new_hhlds,year=year,show=True,subtract=True)
-        
+
+    dset.households.index.name = 'household_id'
     choosers = dset.fetch(simulation_table)
         
     if relocation_config['Enabled']:

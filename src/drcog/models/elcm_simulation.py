@@ -14,7 +14,8 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
                     "geography_field": "building_id","amount_field": "total_number_of_jobs","size_field":"employees"}
         import synthicity.urbansim.transitionmodel as transitionmodel
         transitionmodel.simulate(dset,new_jobs,year=year,show=True)
-
+        
+    dset.establishments.index.name = 'establishment_id'
     choosers = dset.fetch(simulation_table)
     placed_choosers = choosers[choosers[depvar]>0]
 
@@ -22,11 +23,8 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     print "Total new agents and movers = %d" % len(movers.index)
     alternatives.building_sqft_per_job = alternatives.building_sqft_per_job.fillna(1000)
     alternatives['spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job
-    try:
-        empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
-    except:
-        from IPython import embed
-        embed()
+    empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
+
     alts = alternatives.ix[empty_units.index]
     alts["supply"] = empty_units
     lotterychoices = True

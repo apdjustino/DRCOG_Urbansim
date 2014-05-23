@@ -216,7 +216,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         
 
         #####Export household points
-        hh = households[['building_id']].reset_index()
+        #hh = households[['building_id']].reset_index()
+        hh = dset.fetch('households')[['building_id']].reset_index()
         hh['parcel_id'] = bpz.parcel_id[hh.building_id].values
         hh['urbancenter_id'] = bpz.urbancenter_id[hh.building_id].values
         hh['x'] = bpz.x[hh.building_id].values.astype('int64')
@@ -233,7 +234,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
             hh.x[idx_hh_on_parcel] = x
             hh.y[idx_hh_on_parcel] = y
         del hh['building_id']
-        hh.rename(columns={'index':'tempid'},inplace=True)
+        hh.rename(columns={'household_id':'tempid'},inplace=True)
         hh.to_csv(tm_input_dir+'\\housing_units%s.csv'%sim_year,index=False)
         
         print 'Loading hh_xy to db'
