@@ -19,13 +19,14 @@ def run(dset, current_year):
         agents_to_relocate = shuffled_ids[:number_of_agents]
         idx_agents_to_relocate = np.in1d(dset.households.index.values,agents_to_relocate)
         
-        new_building_id = b[b.zone_id==zone_id].index.values[0]
-        dset.households.building_id[idx_agents_to_relocate] = new_building_id
-        # try:
-            # new_building_id = b[b.zone_id==zone_id].index.values[0]
-            # agents_joined.building_id[idx_agents_to_relocate] = new_building_id
-        # except:
-            # print 'No buildings in specified zone.  Cannot place agents.'
+        # new_building_id = b[b.zone_id==zone_id].index.values[0]
+        # dset.households.building_id[idx_agents_to_relocate] = new_building_id
+        try:
+            new_building_id = b[b.zone_id==zone_id].index.values[0]
+            agents_joined.building_id[idx_agents_to_relocate] = new_building_id
+        except:
+            print 'Creating structure.'
+            
             
     def unplace_agents(agents_joined,zone_id,number_of_agents):
         number_of_agents = -number_of_agents #flip the sign
@@ -46,13 +47,13 @@ def run(dset, current_year):
         agents_to_relocate = shuffled_ids
         idx_agents_to_relocate = np.in1d(dset.establishments.index.values,agents_to_relocate)
         
-        new_building_id = b[b.zone_id==zone_id].index.values[0]
-        dset.establishments.building_id[idx_agents_to_relocate] = new_building_id
-        # try:
-            # new_building_id = b[b.zone_id==zone_id].index.values[0]
-            # agents_joined.building_id[idx_agents_to_relocate] = new_building_id
-        # except:
-            # print 'No buildings in specified zone.  Cannot place agents.'
+        # new_building_id = b[b.zone_id==zone_id].index.values[0]
+        # dset.establishments.building_id[idx_agents_to_relocate] = new_building_id
+        try:
+            new_building_id = b[b.zone_id==zone_id].index.values[0]
+            agents_joined.building_id[idx_agents_to_relocate] = new_building_id
+        except:
+            print 'No buildings in specified zone.  Cannot place agents.'
             
     def unplace_estabs(agents_joined,zone_id,number_of_agents):
         number_of_agents = -number_of_agents #flip the sign

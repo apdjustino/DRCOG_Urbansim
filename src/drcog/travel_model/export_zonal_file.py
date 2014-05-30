@@ -158,7 +158,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         jobs.rename(columns={'job_id':'tempid'},inplace=True)
         jobs.to_csv(tm_input_dir+'\\jobs%s.csv'%sim_year,index=False)
         
-        conn_string = "host='paris.urbansim.org' dbname='denver' user='drcog' password='M0untains#' port=5433"
+        #conn_string = "host='paris.urbansim.org' dbname='denver' user='drcog' password='M0untains#' port=5433"
+        conn_string = "host='localhost' dbname='urbansim_tmexport' user='postgres' password='postgres' port=5432"
         conn = psycopg2.connect(conn_string)
         cursor = conn.cursor()
         
@@ -198,17 +199,6 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
             job_centroids
             inner join
             jobs_xy on st_dwithin(job_centroids.the_geom, jobs_xy.the_geom, 2640)
-        group by jobs_xy.taz05_id);
-        DROP TABLE IF EXISTS job_hh_buffer;
-        create table job_hh_buffer as(select
-            jobs_xy.taz05_id,
-            count(jobtypename = 'Service' or null) as "servdenshhcentroid",
-            count(jobtypename = 'Restaurant' or null) as "restaurantemploymenthouseholdbuffer",
-            count(jobtypename = 'Retail' or null) as "retailemploymenthouseholdbuffer"
-        from
-            hh_centroids
-            inner join
-            jobs_xy on st_dwithin(hh_centroids.the_geom, jobs_xy.the_geom, 2640)
         group by jobs_xy.taz05_id);
         '''
         cursor.execute(job_buffer_sql)
@@ -269,6 +259,17 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         FROM job_centroids INNER JOIN hh_xy 
         ON ST_DWithin(job_centroids.the_geom, hh_xy.the_geom, 2640)
         group by hh_xy.taz05_id);
+        DROP TABLE IF EXISTS job_hh_buffer;
+        create table job_hh_buffer as(select
+            jobs_xy.taz05_id,
+            count(jobtypename = 'Service' or null) as "servdenshhcentroid",
+            count(jobtypename = 'Restaurant' or null) as "restaurantemploymenthouseholdbuffer",
+            count(jobtypename = 'Retail' or null) as "retailemploymenthouseholdbuffer"
+        from
+            hh_centroids
+            inner join
+            jobs_xy on st_dwithin(hh_centroids.the_geom, jobs_xy.the_geom, 2640)
+        group by jobs_xy.taz05_id);
         '''
         cursor.execute(hh_buffer_sql)
         conn.commit()
