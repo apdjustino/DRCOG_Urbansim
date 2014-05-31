@@ -2,6 +2,9 @@ import pandas as pd, numpy as np, time, os
 
 def run(dset, indicator_output_directory, forecast_year):
 
+    z_index = dset.zones.index
+    zone_index = pd.Series(index=z_index).fillna(0)
+    
     #Record base values for temporal comparison
     hh = dset.store.households
     e = dset.store.establishments
@@ -28,18 +31,31 @@ def run(dset, indicator_output_directory, forecast_year):
     base_emp5_county = e[e.sector_id_six==5].groupby('county_id').employees.sum()
     base_emp6_county = e[e.sector_id_six==6].groupby('county_id').employees.sum()
     ##Base year zonal indicators
-    base_hh_zone = hh.groupby('zone_id').size()
-    base_pop_zone = hh.groupby('zone_id').persons.sum()
-    base_medinc_zone = hh.groupby('zone_id').income.median()
-    base_ru_zone = b.groupby('zone_id').residential_units.sum()
-    base_emp_zone = e.groupby('zone_id').employees.sum()
-    base_emp1_zone = e[e.sector_id_six==1].groupby('zone_id').employees.sum()
-    base_emp2_zone = e[e.sector_id_six==2].groupby('zone_id').employees.sum()
-    base_emp3_zone = e[e.sector_id_six==3].groupby('zone_id').employees.sum()
-    base_emp4_zone = e[e.sector_id_six==4].groupby('zone_id').employees.sum()
-    base_emp5_zone = e[e.sector_id_six==5].groupby('zone_id').employees.sum()
-    base_emp6_zone = e[e.sector_id_six==6].groupby('zone_id').employees.sum()
-    base_nr_zone = b.groupby('zone_id').non_residential_sqft.sum()
+    base_hh_zone = hh.groupby('zone_id').size()+zone_index
+    base_pop_zone = hh.groupby('zone_id').persons.sum()+zone_index
+    base_medinc_zone = hh.groupby('zone_id').income.median()+zone_index
+    base_ru_zone = b.groupby('zone_id').residential_units.sum()+zone_index
+    base_emp_zone = e.groupby('zone_id').employees.sum()+zone_index
+    base_emp1_zone = e[e.sector_id_six==1].groupby('zone_id').employees.sum()+zone_index
+    base_emp2_zone = e[e.sector_id_six==2].groupby('zone_id').employees.sum()+zone_index
+    base_emp3_zone = e[e.sector_id_six==3].groupby('zone_id').employees.sum()+zone_index
+    base_emp4_zone = e[e.sector_id_six==4].groupby('zone_id').employees.sum()+zone_index
+    base_emp5_zone = e[e.sector_id_six==5].groupby('zone_id').employees.sum()+zone_index
+    base_emp6_zone = e[e.sector_id_six==6].groupby('zone_id').employees.sum()+zone_index
+    base_nr_zone = b.groupby('zone_id').non_residential_sqft.sum()+zone_index
+    
+    base_hh_zone = base_hh_zone.fillna(0)
+    base_pop_zone = base_pop_zone.fillna(0)
+    base_medinc_zone = base_medinc_zone.fillna(0)
+    base_ru_zone = base_ru_zone.fillna(0)
+    base_emp_zone = base_emp_zone.fillna(0)
+    base_emp1_zone = base_emp1_zone.fillna(0)
+    base_emp2_zone = base_emp2_zone.fillna(0)
+    base_emp3_zone = base_emp3_zone.fillna(0)
+    base_emp4_zone = base_emp4_zone.fillna(0)
+    base_emp5_zone = base_emp5_zone.fillna(0)
+    base_emp6_zone = base_emp6_zone.fillna(0)
+    base_nr_zone = base_nr_zone.fillna(0)
         
     ##Forecast year indicators
     b = dset.fetch('buildings')
