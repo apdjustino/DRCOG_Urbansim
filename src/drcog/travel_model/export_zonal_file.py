@@ -224,14 +224,14 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
             hh.x[idx_hh_on_parcel] = x
             hh.y[idx_hh_on_parcel] = y
         del hh['building_id']
-        hh.rename(columns={'household_id':'tempid'},inplace=True)
+        hh.rename(columns={'household_id':'hhid'},inplace=True)
         hh.to_csv(tm_input_dir+'\\housing_units%s.csv'%sim_year,index=False)
         
         print 'Loading hh_xy to db'
         cursor.execute("DROP TABLE IF EXISTS hh_xy;")
         conn.commit()
 
-        cursor.execute("CREATE TABLE hh_xy (tempid integer,parcel_id integer,urbancenter_id text,x integer,y integer,taz05_id integer,dist_trans numeric);")
+        cursor.execute("CREATE TABLE hh_xy (hhid integer,parcel_id integer,urbancenter_id text,x integer,y integer,taz05_id integer,dist_trans numeric);")
         conn.commit()
 
         output = cStringIO.StringIO()
