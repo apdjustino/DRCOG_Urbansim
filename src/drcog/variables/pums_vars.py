@@ -99,5 +99,9 @@ def get_pums():
     pums_hh['hownrent'] = 1*(pums_hh.ten<3) + 2*(pums_hh.ten>2)
     pums_hh['bucketBin'] = 0
     pums_hh['originalpuma'] = pums_hh.puma
-    
+    for col in pums_hh:
+        if col not in ['adjinc','hinc']:
+            if pums_hh[col].dtype== np.float:
+                pums_hh[col] = pums_hh[col].fillna(0).astype('int32')
+                
     return pums_hh, pums_p
