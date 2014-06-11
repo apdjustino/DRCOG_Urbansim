@@ -28,8 +28,9 @@ def get_pums():
     pums_hh.adjinc = pums_hh.adjinc*.000001
     pums_p['inc_adjustment'] = pums_hh.adjinc[pums_p.index.values].values
     pums_p['earns'] = pums_p.pernp*pums_p.inc_adjustment*.74 ##Adjustment from 2011 dollars to 1999 dollars
-
-    pums_p['indnaics'] = pums_p.indp07
+    pums_p.indp07[pums_p.indp07=='N.A.'] = '0'
+    pums_p.indp07[pums_p.indp07==''] = '0'
+    pums_p['indnaics'] = pums_p.indp07.astype('float').astype('int32')
     pums_p['pemploy'] = 1*(pums_p.wkhp>=25) + 2*(pums_p.wkhp<25)*(pums_p.wkhp>0) + 3*(pums_p.wkhp<1)
     pums_p['pstudent'] = 1*(pums_p.schg<=5)*(pums_p.schg>0) + 2*(pums_p.schg>5) + 3*(pums_p.schg==-99)
     pums_p['padkid'] = 1*(pums_p.agep>=18)*(pums_p.agep<=24)*(pums_p.relp.isin([1,2,4,5]))
