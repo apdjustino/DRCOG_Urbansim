@@ -11,6 +11,7 @@ def get_pums():
     pums_hh = pums_hh.set_index('serialno')
     pums_p = pums_p.set_index('serialno')
     pums_hh = pums_hh[(pums_hh.type==1)*(pums_hh.np>0)]
+    pums_p.agep[(pums_p.relp==0)*(pums_p.agep<16)] = 16
     pums_p['age'] = pums_p.agep
     pums_p['relate'] = pums_p.relp
     pums_p['esr_recode'] = 0*(pums_p.esr.isin([-99,6])) + 1*(pums_p.esr.isin([1,4])) + 2*(pums_p.esr.isin([2,5])) + 3*(pums_p.esr==3)
@@ -28,9 +29,25 @@ def get_pums():
     pums_hh.adjinc = pums_hh.adjinc*.000001
     pums_p['inc_adjustment'] = pums_hh.adjinc[pums_p.index.values].values
     pums_p['earns'] = pums_p.pernp*pums_p.inc_adjustment*.74 ##Adjustment from 2011 dollars to 1999 dollars
-    pums_p.indp07[pums_p.indp07=='N.A.'] = '0'
-    pums_p.indp07[pums_p.indp07==''] = '0'
-    pums_p['indnaics'] = pums_p.indp07.astype('float').astype('int32')
+    # pums_p.indp07[pums_p.indp07=='N.A.'] = '0'
+    # pums_p.indp07[pums_p.indp07==''] = '0'
+    # pums_p['indnaics'] = pums_p.indp07.astype('float').astype('int32')
+    pums_p.naicsp07[pums_p.naicsp07=='N.A.////'] = '0'
+    pums_p.naicsp07[pums_p.naicsp07==''] = '0'
+    pums_p.naicsp07 = pums_p.naicsp07.str.slice(0,3)
+    pums_p.naicsp07[pums_p.naicsp07=='22S'] = '221'
+    pums_p.naicsp07[pums_p.naicsp07=='23'] = '230'
+    pums_p.naicsp07[pums_p.naicsp07=='31M'] = '313'
+    pums_p.naicsp07[pums_p.naicsp07=='33M'] = '331'
+    pums_p.naicsp07[pums_p.naicsp07=='3MS'] = '311'
+    pums_p.naicsp07[pums_p.naicsp07=='42S'] = '423'
+    pums_p.naicsp07[pums_p.naicsp07=='4M'] = '443'
+    pums_p.naicsp07[pums_p.naicsp07=='4MS'] = '443'
+    pums_p.naicsp07[pums_p.naicsp07=='52M'] = '522'
+    pums_p.naicsp07[pums_p.naicsp07=='53M'] = '532'
+    pums_p.naicsp07[pums_p.naicsp07=='55'] = '561'
+    pums_p.naicsp07[pums_p.naicsp07=='92M'] = '921'
+    pums_p['indnaics'] = pums_p.naicsp07.astype('float').astype('int32')
     pums_p['pemploy'] = 1*(pums_p.wkhp>=25) + 2*(pums_p.wkhp<25)*(pums_p.wkhp>0) + 3*(pums_p.wkhp<1)
     pums_p['pstudent'] = 1*(pums_p.schg<=5)*(pums_p.schg>0) + 2*(pums_p.schg>5) + 3*(pums_p.schg==-99)
     pums_p['padkid'] = 1*(pums_p.agep>=18)*(pums_p.agep<=24)*(pums_p.relp.isin([1,2,4,5]))
