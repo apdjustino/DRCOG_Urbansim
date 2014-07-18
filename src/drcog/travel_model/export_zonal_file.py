@@ -159,8 +159,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         jobs.to_csv(tm_input_dir+'\\jobs%s.csv'%sim_year,index=False)
         
         #conn_string = "host='paris.urbansim.org' dbname='denver' user='drcog' password='M0untains#' port=5433"
-        #conn_string = "host='localhost' dbname='urbansim_tmexport' user='postgres' password='postgres' port=5432"
-        conn_string = "host='10.0.1.16' dbname='urbansim_tmexport' user='model_su' password='p0w3rTe@m' port=5432"
+        conn_string = "host='localhost' dbname='urbansim_tmexport' user='postgres' password='postgres' port=5432"
+        #conn_string = "host='10.0.1.16' dbname='urbansim_tmexport' user='model_su' password='p0w3rTe@m' port=5432"
         
         conn = psycopg2.connect(conn_string)
         cursor = conn.cursor()
@@ -171,7 +171,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
 
         cursor.execute("CREATE TABLE jobs_xy (tempid integer,parcel_id integer,urbancenter_id text,x integer,y integer,taz05_id integer,jobtypename text);")
         conn.commit()
-
+        from IPython import embed
+        embed()
         output = cStringIO.StringIO()
         jobs.to_csv(output, sep='\t', header=False, index=False)
         output.seek(0)
