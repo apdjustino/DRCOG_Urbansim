@@ -56,7 +56,7 @@ def run(dset, current_year):
                     county_id = 8123
                 pid = dset.parcels.index.values.max()+1
                 newparcel = pd.DataFrame({'county_id':[county_id],'parcel_sqft':[43560],'land_value':[0],'zone_id':[zone_id],
-                                             'centroid_x':[x],'centroid_y':[y],'dist_bus':[6000],'dist_rail':[6000],'in_ugb':[1],'in_uga':[0],
+                                             'centroid_x':[x],'centroid_y':[y],'x':[x],'y':[y],'dist_bus':[6000],'dist_rail':[6000],'in_ugb':[1],'in_uga':[0],
                                              'prop_constrained':[0.0],'acres':[1.0] })
                 newparcel.index = np.array([pid])
                 dset.d['parcels'] = pd.concat([dset.parcels,newparcel])
@@ -128,7 +128,7 @@ def run(dset, current_year):
                     county_id = 8123
                 pid = dset.parcels.index.values.max()+1
                 newparcel = pd.DataFrame({'county_id':[county_id],'parcel_sqft':[43560],'land_value':[0],'zone_id':[zone_id],
-                                             'centroid_x':[x],'centroid_y':[y],'dist_bus':[6000],'dist_rail':[6000],'in_ugb':[1],'in_uga':[0],
+                                             'centroid_x':[x],'centroid_y':[y],'x':[x],'y':[y],'dist_bus':[6000],'dist_rail':[6000],'in_ugb':[1],'in_uga':[0],
                                              'prop_constrained':[0.0],'acres':[1.0] })
                 newparcel.index = np.array([pid])
                 dset.d['parcels'] = pd.concat([dset.parcels,newparcel])

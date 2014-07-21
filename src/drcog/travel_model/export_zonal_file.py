@@ -128,7 +128,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         print len(hbs)
         print len(sids)
         jobs = pd.DataFrame({'job_id':range(1,len(bids)+1),'building_id':bids,'establishment_id':eids,'home_based_status':hbs,'sector_id':sids})
-        jobs['parcel_id'] = bpz.parcel_id[jobs.building_id].values
+        jobs['parcel_id'] = bpz.parcel_id[jobs.building_id].values.astype('int32')
         jobs['urbancenter_id'] = bpz.urbancenter_id[jobs.building_id].values
         jobs['x'] = bpz.x[jobs.building_id].values.astype('int64')
         jobs['y'] = bpz.y[jobs.building_id].values.astype('int64')
@@ -171,9 +171,9 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
 
         cursor.execute("CREATE TABLE jobs_xy (tempid integer,parcel_id integer,urbancenter_id text,x integer,y integer,taz05_id integer,jobtypename text);")
         conn.commit()
-        from IPython import embed
-        embed()
+
         output = cStringIO.StringIO()
+        jobs = jobs[jobs.parcel_id>0]
         jobs.to_csv(output, sep='\t', header=False, index=False)
         output.seek(0)
         cursor.copy_from(output, 'jobs_xy', columns =tuple(jobs.columns.values.tolist()))
@@ -211,11 +211,11 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         #####Export household points
         #hh = households[['building_id']].reset_index()
         hh = dset.fetch('households')[['building_id']].reset_index()
-        hh['parcel_id'] = bpz.parcel_id[hh.building_id].values
+        hh['parcel_id'] = bpz.parcel_id[hh.building_id].values.astype('int32')
         hh['urbancenter_id'] = bpz.urbancenter_id[hh.building_id].values
         hh['x'] = bpz.x[hh.building_id].values.astype('int64')
         hh['y'] = bpz.y[hh.building_id].values.astype('int64')
-        hh['taz05_id'] = bpz.external_zone_id[hh.building_id].values
+        hh['taz05_id'] = bpz.external_zone_id[hh.building_id].values.astype('int32')
         hh['dist_trans'] = np.minimum(bpz.dist_rail[hh.building_id].values, bpz.dist_bus[hh.building_id].values)/5280.0
         big_parcel_ids_with_hh = np.unique(hh.parcel_id[np.in1d(hh.parcel_id,big_parcels)].values)
         for parcel_id in big_parcel_ids_with_hh:
@@ -238,6 +238,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         conn.commit()
 
         output = cStringIO.StringIO()
+        hh = hh[hh.parcel_id>0]
         hh.to_csv(output, sep='\t', header=False, index=False)
         output.seek(0)
         cursor.copy_from(output, 'hh_xy', columns =tuple(hh.columns.values.tolist()))
