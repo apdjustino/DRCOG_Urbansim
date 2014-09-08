@@ -210,7 +210,10 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
 
         #####Export household points
         #hh = households[['building_id']].reset_index()
+        dset.households.building_id[dset.households.building_id<1] = np.random.choice(bpz[bpz.residential_units>0].index.values,(dset.households.building_id<1).sum())
         hh = dset.fetch('households')[['building_id']].reset_index()
+        #hh.building_id[hh.building_id < 1] = np.random.choice(bpz.index.values,(hh.building_id < 1).sum())
+        
         hh['parcel_id'] = bpz.parcel_id[hh.building_id].values.astype('int32')
         hh['urbancenter_id'] = bpz.urbancenter_id[hh.building_id].values
         hh['x'] = bpz.x[hh.building_id].values.astype('int64')
@@ -228,6 +231,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
             hh.y[idx_hh_on_parcel] = y
         del hh['building_id']
         hh.rename(columns={'household_id':'hhid'},inplace=True)
+        # import pdb; pdb.set_trace()
         hh.to_csv(tm_input_dir+'\\housing_units%s.csv'%sim_year,index=False)
         
         print 'Loading hh_xy to db'
