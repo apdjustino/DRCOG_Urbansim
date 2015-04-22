@@ -4,6 +4,8 @@ import itertools
 
 import numpy as np
 import pandas as pd
+import os
+from synthicity.utils import misc
 
 from . import util
 
@@ -44,13 +46,40 @@ def add_rows(data, nrows, starting_index=None):
     if not starting_index:
         starting_index = data.index.values.max() + 1
 
-    i_to_copy = np.random.choice(data.index.values, nrows)
-    new_rows = data.loc[i_to_copy].copy()
+    ###added code to alter age distribution per State Demographer's data
+
+        #import migration data
+    migration = pd.read_csv(os.path.join(misc.data_dir(),'NetMigrationByAge.csv'))
+    #migration = pd.read_csv('C:/users/jmartinez/documents/Age Distribution UrbanSim/NetMigrationByAge.csv')
+    migration.columns = ['county', 'age','net_migration']
+    migration = migration[15:90] #only use ages that are in the households table
+    migration['prob_age'] = migration['net_migration']/migration.net_migration.sum() #create weights array
+
+    random_ages = np.random.choice(migration.age, nrows, p = migration.prob_age)  #randomly choose ages with with wighted pdf
+
+    frame = pd.DataFrame()
+    frame['ages'] = random_ages
+    grp = frame.groupby('ages').size()  #group by age to know the number of ages randomly chosen from above random choice (line 55)
+
+    agg_list = []
+    for i in grp.iteritems():
+        age_val = i[0]
+        age_count = i[1]
+        array = np.random.choice(data[data.age_of_head == age_val].index.values, age_count)
+        for j in array:
+            agg_list.append(j)
+
+    #####original code
+    #i_to_copy = np.random.choice(data.index.values, nrows)   ###randomly chooses household index to copy -- could make it better by assigning a distribution to weight picks based on likely new household characteristics
+    new_rows = data.loc[agg_list].copy()  #creates new dataframe of copied households
     added_index = pd.Index(np.arange(
         starting_index, starting_index + nrows, dtype=np.int))
-    new_rows.index = added_index
+    new_rows.index = added_index  #correctly assigns index
 
-    return pd.concat([data, new_rows]), added_index, pd.Index(i_to_copy)
+    ###temporarily export for analysis
+    #new_rows.to_csv('C:/users/jmartinez/documents/Age Distribution UrbanSim/households_newdist.csv')
+
+    return pd.concat([data, new_rows]), added_index, pd.Index(agg_list)
 
 
 def remove_rows(data, nrows):

@@ -3,7 +3,7 @@ import sys, time, random, string, os
 from synthicity.utils import misc
 from urbandeveloper import spotproforma, developer
 
-def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
+def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year, elasticity_res=None, elasticity_non_res=None):
     #Record post-demand-model change in zone-level household/job totals
     hh = dset.fetch('households')
     e = dset.fetch('establishments')
@@ -176,7 +176,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     newbuildings, price_shifters  = developer.run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=sim_year,
                                  min_building_sqft=developer_configuration['min_building_sqft'],
                                  min_lot_sqft=developer_configuration['min_lot_sqft'],
-                                 max_lot_sqft=max_parcel_sqft,zone_args=zone_args)
+                                 max_lot_sqft=max_parcel_sqft,zone_args=zone_args) #, elasticity_res=elasticity_res, elasticity_non_res=elasticity_non_res)
                                  
     #####APPLY PRICE SHIFTS (PSEUDO-EQUILIBRATION) [MAKE THIS OPTIONAL]
     print 'Applying price shifts'
