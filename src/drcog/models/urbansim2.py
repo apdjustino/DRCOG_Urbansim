@@ -1,7 +1,7 @@
 from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
-from drcog.models import elcm_simulation, hlcm_simulation_income, regression_model_simulation, dataset, refiner, new_refiner
+from drcog.models import elcm_simulation, hlcm_simulation_income, regression_model_simulation, dataset, refiner, new_refiner, gwr_hedonic, regression_model_simulation_nr
 from drcog.variables import variable_library, indicators, urbancanvas_export
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
@@ -44,6 +44,18 @@ class Urbansim2(Model):
         new_refiner.add_non_res_buildings(dset)
 
 
+          # Load coefficients for hedonic regression
+        segment=[5,9,17,18,22]
+        indvars=['stories',  'ln_nres_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
+          'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
+        dset_hed_nr=gwr_hedonic.estimate_zone(dset, indvars, segment)
+
+        segment=[2,3,20,24]
+        indvars=['stories',  'ln_res_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
+          'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
+        dset_hed_r=gwr_hedonic.estimate_zone(dset, indvars, segment)
+
+
         for sim_year in range(base_year,forecast_year+1):
             print 'Simulating year ' + str(sim_year)
             logger.log_status(sim_year)
@@ -77,15 +89,40 @@ class Urbansim2(Model):
 
             ############     REPM SIMULATION
             if core_components_to_run['Price']:
+                # logger.log_status('REPM simulation.')
+                # #Residential
+                # regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_residential',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
+                #                                      agents_groupby = 'building_type_id', segment_ids = [2,3,20,24])
+                # #Non-residential
+                # regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
+                #                                      agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])
                 logger.log_status('REPM simulation.')
                 #Residential
-                regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_residential',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
+                """"
+                regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_res_sqft',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
                                                      agents_groupby = 'building_type_id', segment_ids = [2,3,20,24])
+                """""
+
+                segment=[2,3,20,24]
+                indvars=['stories',  'ln_res_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
+          'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
+                regression_model_simulation_nr.simulate(dset,dset_hed_r,"unit_price_res_sqft", indvars,sim_year, segment)
                 #Non-residential
+                """
                 regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
                                                      agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])
+                print dset.buildings.unit_price_non_residential.mean()
+                """
+
+                segment=[5,9,17,18,22]
+                indvars=['stories',  'ln_nres_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
+          'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
+                regression_model_simulation_nr.simulate(dset,dset_hed_nr,"unit_price_non_residential", indvars,sim_year, segment)
 
             ############     DEVELOPER SIMULATION
+            elasticity_res = 0
+            elasticity_non_res = 0
+
             if core_components_to_run['Developer']:
                 logger.log_status('Proforma simulation.')
                 buildings, newbuildings = proforma_developer_model.run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year, elasticity_res=elasticity_res, elasticity_non_res=elasticity_non_res)

@@ -1,10 +1,10 @@
 import statsmodels.api as sm, os
 import pandas as pd, numpy as np
-from drcog.models import GWR_hedonic
-from GWR_hedonic import estimate_zone as ez,  data_estimation
-from synthicity.utils import misc
-from drcog.models import dataset
-from regression_model_estimation_nr import estimate
+from drcog.models import gwr_hedonic
+# from GWR_hedonic import estimate_zone as ez,  data_estimation
+# from synthicity.utils import misc
+# from drcog.models import dataset
+# from regression_model_estimation_nr import estimate
 
 
 def data_simulation(dset, buildings,parcels,fars,zones,establishments):

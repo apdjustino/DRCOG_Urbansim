@@ -18,7 +18,7 @@ class elasticity_model(object):
     def estimate_elasticity(self, zones):
         dummies = pd.get_dummies(zones.county)
         zones = pd.concat([zones, dummies], axis=1)
-        zones['avg_far'] = self.buildings_far.groupby('zone_id').far.mean()
+        zones['avg_far'] = self.buildings_far.groupby('zone_id').far_x.mean() #use far_x because Xavier's code adds far to buildings
 
         #zones = zones[zones.residential_sqft_zone>0]
 
@@ -117,7 +117,7 @@ class elasticity_model(object):
 
         dummies = pd.get_dummies(zones.county)
         zones = pd.concat([zones, dummies], axis=1)
-        zones['avg_far'] = self.buildings_far.groupby('zone_id').far.mean()
+        zones['avg_far'] = self.buildings_far.groupby('zone_id').far_x.mean() #use far_x because Xavier's code adds far to buildings
         #zones = zones[zones.non_residential_sqft_zone>0]
 
         ####spatial weights matrix#####

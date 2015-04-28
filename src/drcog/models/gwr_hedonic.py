@@ -4,7 +4,7 @@ from drcog.models import dataset
 dset = dataset.DRCOGDataset(os.path.join(misc.data_dir(),'drcog.h5'))
 np.random.seed(1)
 import statsmodels.api as sm
-import pygwr_kernel
+#import pygwr_kernel
 import random
 
 """
