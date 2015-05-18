@@ -156,7 +156,8 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
       # weight the choice by the FAR, which presumably is directly related to profitability
       choiceset_ind = np.random.choice(choiceset.index,len(choiceset.index),replace=False,p=choiceset.values/choiceset.sum())
       # pick the first X number of buildings in order to meet demand
-      buildthese = np.searchsorted(choiceset.ix[choiceset_ind].cumsum().values,demand_sqft)+1 # round up
+      #buildthese = np.searchsorted(choiceset.ix[choiceset_ind].cumsum().values,demand_sqft)+1 # round up
+      buildthese = int(np.searchsorted(choiceset.ix[choiceset_ind].cumsum().values,demand_sqft, side="left"))+1
       if buildthese > choiceset_ind.size:
         # raise prices
         shift_up(btyp,zone_id,elasticity,pct_sqft_chng)  ##Needs to be implemented, but this can be a later stage thing.  H

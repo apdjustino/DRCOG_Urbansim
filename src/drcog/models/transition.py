@@ -49,13 +49,14 @@ def add_rows(data, nrows, starting_index=None):
     ###added code to alter age distribution per State Demographer's data
 
         #import migration data
-    migration = pd.read_csv(os.path.join(misc.data_dir(),'NetMigrationByAge.csv'))
+    migration = pd.read_csv(os.path.join(misc.data_dir(), 'NetMigrationByAge.csv'))
     #migration = pd.read_csv('C:/users/jmartinez/documents/Age Distribution UrbanSim/NetMigrationByAge.csv')
     migration.columns = ['county', 'age','net_migration']
     migration = migration[15:90] #only use ages that are in the households table
     migration['prob_age'] = migration['net_migration']/migration.net_migration.sum() #create weights array
 
-    random_ages = np.random.choice(migration.age, nrows, p = migration.prob_age)  #randomly choose ages with with wighted pdf
+
+    random_ages = np.random.choice(migration.age, nrows, p=migration.prob_age)  #randomly choose ages with with wighted pdf
 
     frame = pd.DataFrame()
     frame['ages'] = random_ages

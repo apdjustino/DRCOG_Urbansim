@@ -45,15 +45,15 @@ class Urbansim2(Model):
 
 
           # Load coefficients for hedonic regression
-        segment=[5,9,17,18,22]
-        indvars=['stories',  'ln_nres_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
-          'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
-        dset_hed_nr=gwr_hedonic.estimate_zone(dset, indvars, segment)
-
-        segment=[2,3,20,24]
-        indvars=['stories',  'ln_res_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
-          'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
-        dset_hed_r=gwr_hedonic.estimate_zone(dset, indvars, segment)
+        # segment=[5,9,17,18,22]
+        # indvars=['stories',  'ln_nres_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
+        #   'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
+        # dset_hed_nr=gwr_hedonic.estimate_zone(dset, indvars, segment)
+        #
+        # segment=[2,3,20,24]
+        # indvars=['stories',  'ln_res_sqft',  'high_land_area', 'year0', 'year10','year20', 'ln_dist_bus','ln_sqft_zone',
+        #   'ln_sqft_out', 'far', 'ln_stories_zone', 'ln_stories_out', 'ln_emp_10']
+        # dset_hed_r=gwr_hedonic.estimate_zone(dset, indvars, segment)
 
 
         for sim_year in range(base_year,forecast_year+1):
@@ -186,6 +186,10 @@ class Urbansim2(Model):
             if export_buildings_to_urbancanvas:
                 logger.log_status('Exporting %s buildings to Urbancanvas database for project %s and year %s.' % (newbuildings.index.size,urbancanvas_scenario_id,sim_year))
                 urbancanvas_scenario_id = urbancanvas_export.export_to_urbancanvas(newbuildings, sim_year, urbancanvas_scenario_id)
+
+            #grow income by 0.5 % annually
+            dset.households['income'] = dset.households['income'].values * 1.005
+
 
         elapsed = time.time() - seconds_start
         print "TOTAL elapsed time: " + str(elapsed) + " seconds."
