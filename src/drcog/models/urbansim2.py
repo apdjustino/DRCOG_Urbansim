@@ -1,7 +1,7 @@
 from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
-from drcog.models import elcm_simulation, hlcm_simulation, regression_model_simulation, dataset, refiner
+from drcog.models import elcm_simulation, hlcm_simulation, regression_model_simulation,census_model_simulation, dataset, refiner
 from drcog.variables import variable_library, indicators, urbancanvas_export
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
@@ -29,7 +29,11 @@ class Urbansim2(Model):
         coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs.h5'))
         dset.coeffs = coeff_store.coeffs.copy()
         coeff_store.close()
-        
+
+        coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs_res.h5'))
+        dset.coeffs_res = coeff_store.coeffs_res.copy()
+        coeff_store.close()
+
         #Keep track of unplaced agents by year
         unplaced_hh = []
         unplaced_emp = []
@@ -70,8 +74,8 @@ class Urbansim2(Model):
             if core_components_to_run['Price']:
                 logger.log_status('REPM simulation.')
                 #Residential
-                regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_residential',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
-                                                     agents_groupby = 'building_type_id', segment_ids = [2,3,20,24])
+                census_model_simulation.simulate_residential(dset, 'unit_price_res_sqft', 'school_district_id', 10, sim_year)
+
                 #Non-residential                                    
                 regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
                                                      agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])

@@ -6,9 +6,21 @@ elcm_configuration = {'building_sqft_per_job_table':'building_sqft_per_job','sca
 def calculate_variables(dset):
 
     ##PARCEL VARIABLES
+
+
+    # XG: Fix the mismatch between zone and county
     p = dset.fetch('parcels')
+    del p['county_id']
+    zone_county=pd.read_csv('C:\urbansim\data/TAZ_County_Table.csv')
+    zone_county=zone_county.set_index('zone_id')
+    zone_county=zone_county[['county_id']]
+    p=pd.merge(p,zone_county, left_on='zone_id', right_index=True)
+    pu=p
+
+    #end of fix
+
     if p.index.name != 'parcel_id':
-        p = p.set_index('parcel_id')
+       p = p.set_index('parcel_id')
     p['in_denver'] = (p.county_id==8031).astype('int32')
     p['ln_dist_rail'] = p.dist_rail.apply(np.log1p)
     p['ln_dist_bus'] = p.dist_bus.apply(np.log1p)
@@ -18,11 +30,23 @@ def calculate_variables(dset):
     p['cherry_creek_school_district'] = (p.school_district==8).astype('int32')
     p['acres'] = p.parcel_sqft/43560.0
     p['ln_acres'] = (p.parcel_sqft/43560.0).apply(np.log1p)
+
     
     #BUILDING VARIABLES
     b = dset.fetch('buildings',building_sqft_per_job_table=elcm_configuration['building_sqft_per_job_table'],bsqft_job_scaling=elcm_configuration['scaling_factor'])
-    b = b[['building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','unit_price_non_residential','unit_price_residential','building_sqft_per_job','non_residential_units','base_year_jobs','all_units']]
+    b = b[['building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','unit_price_non_residential','unit_price_residential']]
     b['zone_id'] = p.zone_id[b.parcel_id].values
+
+    bsqft_job = dset.building_sqft_per_job
+    #bsqft_job.building_sqft_per_job = bsqft_job.building_sqft_per_job
+    b = pd.merge(b,bsqft_job,left_on=['zone_id','building_type_id'],right_index=True,how='left')
+    b["non_residential_units"] = b.non_residential_sqft/b.building_sqft_per_job#####
+    b["base_year_jobs"] = dset.establishments.groupby('building_id').employees.sum()
+    # things get all screwed up if you have overfull buildings
+    b["non_residential_units"] = b[["non_residential_units","base_year_jobs"]].max(axis=1)
+    b["all_units"] = b.residential_units + b.non_residential_units
+
+
     b['county_id'] = p.county_id[b.parcel_id].values
     b['townhome'] = (b.building_type_id==24).astype('int32')
     b['multifamily'] = (np.in1d(b.building_type_id,[2,3])).astype('int32')
@@ -41,8 +65,11 @@ def calculate_variables(dset):
     b['county8047'] = (b.county_id==8047).astype('int32')
     b['county8059'] = (b.county_id==8059).astype('int32')
     b['county8123'] = (b.county_id==8123).astype('int32')
+    b[ 'unit_price_res_sqft']=b[b.residential_units>0].unit_price_residential/b[b.residential_units>0].bldg_sq_ft
     p['nonres_far'] = (b.groupby('parcel_id').non_residential_sqft.sum()/p.acres).apply(np.log1p)
     p['ln_units_per_acre'] = (b.groupby('parcel_id').residential_units.sum()/p.acres).apply(np.log1p)
+
+
     
     #HOUSEHOLD VARIABLES
     hh_estim = dset.fetch('households_for_estimation')
@@ -77,14 +104,29 @@ def calculate_variables(dset):
         
     #ESTABLISHMENT VARIABLES
     e = dset.fetch('establishments')
+
     e['zone_id'] = b.zone_id[e.building_id].values
     e['county_id'] = b.county_id[e.building_id].values
     e['sector_id_six'] = 1*(e.sector_id==61) + 2*(e.sector_id==71) + 3*np.in1d(e.sector_id,[11,21,22,23,31,32,33,42,48,49]) + 4*np.in1d(e.sector_id,[7221,7222,7224]) + 5*np.in1d(e.sector_id,[44,45,7211,7212,7213,7223]) + 6*np.in1d(e.sector_id,[51,52,53,54,55,56,62,81,92])
     e['sector_id_retail_agg'] = e.sector_id*np.logical_not(np.in1d(e.sector_id,[7211,7212,7213])) + 7211*np.in1d(e.sector_id,[7211,7212,7213])
     e['nonres_sqft'] = b.non_residential_sqft[e.building_id].values
 
+
     #ZONE VARIABLES
+
+    #XG: fix the mismatch zone county
     z = dset.fetch('zones')
+    del z['county']
+    z['zone_id']=z.index
+    zone_county=pd.read_csv('C:\urbansim\data/TAZ_County_Table.csv')
+    zone_county=zone_county.set_index('zone_id')
+    zone_county=zone_county[['county']]
+    z=pd.merge(z,zone_county, left_on='zone_id', right_index=True)
+    del z['zone_id']
+    zu=z
+    #end of fix
+
+
     z['zonal_hh'] = hh.groupby('zone_id').size()
     z['zonal_emp'] = e.groupby('zone_id').employees.sum()
     z['zonal_pop'] = hh.groupby('zone_id').persons.sum()
@@ -115,11 +157,12 @@ def calculate_variables(dset):
     z['emp_sector4'] = e[e.sector_id_six==4].groupby('zone_id').employees.sum()
     z['emp_sector5'] = e[e.sector_id_six==5].groupby('zone_id').employees.sum()
     z['emp_sector6'] = e[e.sector_id_six==6].groupby('zone_id').employees.sum()
-    z['jobs_within_45min'] = dset.compute_range(z.zonal_emp,45.0)/10000.0
+    z['jobs_within_45min'] = dset.compute_range(z.zonal_emp,45.0)
     z['ln_jobs_within_45min'] = dset.compute_range(z.zonal_emp,45.0).apply(np.log1p)
-    z['jobs_within_30min'] = dset.compute_range(z.zonal_emp,30.0)/10000.0
+    z['jobs_within_30min'] = dset.compute_range(z.zonal_emp,30.0)
     z['ln_jobs_within_30min'] = dset.compute_range(z.zonal_emp,30.0).apply(np.log1p)
-    z['jobs_within_20min'] = dset.compute_range(z.zonal_emp,20.0)/10000.0
+    z['jobs_within_20min'] = dset.compute_range(z.zonal_emp,20.0)
+    z['jobs_within_15min'] = dset.compute_range(z.zonal_emp,15.0)
     z['ln_jobs_within_20min'] = dset.compute_range(z.zonal_emp,20.0).apply(np.log1p)
     z['ln_pop_within_20min'] = dset.compute_range(z.zonal_pop,20.0).apply(np.log1p)
     z['ln_emp_aggsector_within_5min'] = dset.compute_range(z.emp_sector_agg,5.0).apply(np.log1p)
@@ -132,6 +175,42 @@ def calculate_variables(dset):
     z['ln_emp_sector5_within_15min'] = dset.compute_range(z.emp_sector5,15.0).apply(np.log1p)
     z['ln_emp_sector6_within_15min'] = dset.compute_range(z.emp_sector6,15.0).apply(np.log1p)
     z['allpurpose_agglosum_floor'] = (z.allpurpose_agglosum>=0)*(z.allpurpose_agglosum)
+
+    #Exports (for Tableau-Employment)
+
+    z['emp_sector1_within_20min'] = dset.compute_range(z.emp_sector1,20.0)
+    z['emp_sector2_within_20min'] = dset.compute_range(z.emp_sector2,20.0)
+    z['emp_sector3_within_20min'] = dset.compute_range(z.emp_sector3,20.0)
+    z['emp_sector4_within_20min'] = dset.compute_range(z.emp_sector4,20.0)
+    z['emp_sector5_within_20min'] = dset.compute_range(z.emp_sector5,20.0)
+    z['emp_sector6_within_20min'] = dset.compute_range(z.emp_sector6,20.0)
+
+    z['emp_sector1_within_30min'] = dset.compute_range(z.emp_sector1,30.0)
+    z['emp_sector2_within_30min'] = dset.compute_range(z.emp_sector2,30.0)
+    z['emp_sector3_within_30min'] = dset.compute_range(z.emp_sector3,30.0)
+    z['emp_sector4_within_30min'] = dset.compute_range(z.emp_sector4,30.0)
+    z['emp_sector5_within_30min'] = dset.compute_range(z.emp_sector5,30.0)
+    z['emp_sector6_within_30min'] = dset.compute_range(z.emp_sector6,30.0)
+
+    z['emp_sector1_within_45min'] = dset.compute_range(z.emp_sector1,45.0)
+    z['emp_sector2_within_45min'] = dset.compute_range(z.emp_sector2,45.0)
+    z['emp_sector3_within_45min'] = dset.compute_range(z.emp_sector3,45.0)
+    z['emp_sector4_within_45min'] = dset.compute_range(z.emp_sector4,45.0)
+    z['emp_sector5_within_45min'] = dset.compute_range(z.emp_sector5,45.0)
+    z['emp_sector6_within_45min'] = dset.compute_range(z.emp_sector6,45.0)
+
+    z['residential_unit_per_jobs_within_15_min']= z['residential_units_zone']/z['jobs_within_15min']
+    z['residential_sqft_per_jobs_within_15_min']= (b[np.in1d(b['building_type_id'], [2,3,20,24])].groupby('zone_id').bldg_sq_ft.sum())/z['jobs_within_15min']
+
+    ztableau=z[['zonal_emp', 'emp_sector1','emp_sector2', 'emp_sector3', 'emp_sector4', 'emp_sector5', 'emp_sector6'
+        , 'jobs_within_45min', 'jobs_within_30min','jobs_within_20min',
+         'emp_sector1_within_20min','emp_sector2_within_20min','emp_sector3_within_20min','emp_sector4_within_20min'
+        ,'emp_sector5_within_20min','emp_sector6_within_20min' ,
+         'emp_sector1_within_30min','emp_sector2_within_30min','emp_sector3_within_30min','emp_sector4_within_30min'
+        ,'emp_sector5_within_30min','emp_sector6_within_30min' ,
+          'emp_sector1_within_45min','emp_sector2_within_45min','emp_sector3_within_45min','emp_sector4_within_45min'
+        ,'emp_sector5_within_45min','emp_sector6_within_45min','residential_unit_per_jobs_within_15_min' ,'residential_sqft_per_jobs_within_15_min']]
+    ztableau.to_csv('C:\urbansim\output\emp_tableau.csv')
     
     ##JOINS
     #merge parcels with zones
@@ -146,3 +225,6 @@ def calculate_variables(dset):
     dset.d['buildings'] = bpz
     if dset.parcels.index.name != 'parcel_id':
         dset.d['parcels'] = p
+
+    dset.d['zones']=zu
+    dset.d['parcels']=pu

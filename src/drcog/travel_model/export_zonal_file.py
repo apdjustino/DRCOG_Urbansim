@@ -157,8 +157,10 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         del jobs['sector_id']
         jobs.rename(columns={'job_id':'tempid'},inplace=True)
         jobs.to_csv(tm_input_dir+'\\jobs%s.csv'%sim_year,index=False)
-        
+
+
         #conn_string = "host='paris.urbansim.org' dbname='denver' user='drcog' password='M0untains#' port=5433"
+        #conn_string = "host='lumsrv' dbname='urbansim_tmexport' user='model_team' password='m0d3lte@m' port=5432"
         conn_string = "host='localhost' dbname='urbansim_tmexport' user='postgres' password='postgres' port=5432"
         #conn_string = "host='10.0.1.16' dbname='urbansim_tmexport' user='model_su' password='p0w3rTe@m' port=5432"
         
@@ -206,7 +208,7 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         '''
         cursor.execute(job_buffer_sql)
         conn.commit()
-        
+
 
         #####Export household points
         #hh = households[['building_id']].reset_index()
@@ -229,7 +231,8 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         del hh['building_id']
         hh.rename(columns={'household_id':'hhid'},inplace=True)
         hh.to_csv(tm_input_dir+'\\housing_units%s.csv'%sim_year,index=False)
-        
+
+
         print 'Loading hh_xy to db'
         cursor.execute("DROP TABLE IF EXISTS hh_xy;")
         conn.commit()
@@ -311,9 +314,10 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         tm_export['MixedUseDensityEmploymentCentroid'] = (tm_export.retden*tm_export.resden)/np.maximum(np.array([.0001]*2804),(tm_export.retden+tm_export.resden))
         del tm_export['resden']
         del tm_export['retden']
+
         tm_export.to_csv(tm_input_dir+'\\ZonalDataTemplate%s.csv'%sim_year,index=False)
         
-        
+"""
         #####Export synthetic households and persons
         h = dset.fetch('households')[['serialno','building_id']]
         b = dset.fetch('buildings')[['residential_units','parcel_id','building_type_id']]
@@ -402,4 +406,4 @@ def export_zonal_file_to_tm(dset,sim_year,logger,tm_config=None):
         
         ####RUN TRAVEL MODEL
         # raw_input("Press Enter when travel model is finished running...")
-    
+"""

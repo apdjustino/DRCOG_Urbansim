@@ -9,7 +9,12 @@ def run(dset, current_year):
 
     b = dset.buildings
     p = dset.parcels
+    if p.index.name != 'parcel_id':
+       p = p.set_index('parcel_id')
+
     z = dset.zones
+
+
     e = dset.establishments
     hh = dset.households
     zone_refine = pd.read_csv(os.path.join(misc.data_dir(),'zone_demand_refine.csv'))
@@ -54,12 +59,12 @@ def run(dset, current_year):
                     county_id = 8059
                 elif county == 'Weld':
                     county_id = 8123
-                pid = dset.parcels.index.values.max()+1
+                pid = p.index.values.max()+1
                 newparcel = pd.DataFrame({'county_id':[county_id],'parcel_sqft':[43560],'land_value':[0],'zone_id':[zone_id],
                                              'centroid_x':[x],'centroid_y':[y],'x':[x],'y':[y],'dist_bus':[6000],'dist_rail':[6000],'in_ugb':[1],'in_uga':[0],
                                              'prop_constrained':[0.0],'acres':[1.0] })
                 newparcel.index = np.array([pid])
-                dset.d['parcels'] = pd.concat([dset.parcels,newparcel])
+                dset.d['parcels'] = pd.concat([p,newparcel])
                 dset.parcels.index.name = 'parcel_id'
             else:
                 pid = p.index.values[p.zone_id==zone_id][0]
@@ -126,12 +131,12 @@ def run(dset, current_year):
                     county_id = 8059
                 elif county == 'Weld':
                     county_id = 8123
-                pid = dset.parcels.index.values.max()+1
+                pid = p.index.values.max()+1
                 newparcel = pd.DataFrame({'county_id':[county_id],'parcel_sqft':[43560],'land_value':[0],'zone_id':[zone_id],
                                              'centroid_x':[x],'centroid_y':[y],'x':[x],'y':[y],'dist_bus':[6000],'dist_rail':[6000],'in_ugb':[1],'in_uga':[0],
                                              'prop_constrained':[0.0],'acres':[1.0] })
                 newparcel.index = np.array([pid])
-                dset.d['parcels'] = pd.concat([dset.parcels,newparcel])
+                dset.d['parcels'] = pd.concat([p,newparcel])
                 dset.parcels.index.name = 'parcel_id'
             else:
                 pid = p.index.values[p.zone_id==zone_id][0]

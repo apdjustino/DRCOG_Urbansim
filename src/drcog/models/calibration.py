@@ -1,7 +1,7 @@
 from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
-from drcog.models import elcm_simulation, hlcm_simulation, regression_model_simulation, dataset
+from drcog.models import elcm_simulation, hlcm_simulation, regression_model_simulation, dataset,census_model_simulation
 from drcog.variables import variable_library, indicators
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
@@ -49,6 +49,10 @@ class Urbansim2(Model):
             coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs.h5'))
             dset.coeffs = coeff_store.coeffs.copy()
             coeff_store.close()
+
+            coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs_res.h5'))
+            dset.coeffs_res = coeff_store.coeffs_res.copy()
+            coeff_store.close()
             
             #Keep track of unplaced agents by year
             unplaced_hh = []
@@ -84,8 +88,9 @@ class Urbansim2(Model):
                 if core_components_to_run['Price']:
                     logger.log_status('REPM simulation.')
                     #Residential
-                    regression_model_simulation.simulate(dset, year=sim_year, output_varname='unit_price_residential',simulation_table='buildings', output_names = ["drcog-coeff-reshedonic-%s.csv","DRCOG RESHEDONIC MODEL (%s)","resprice_%s"],
-                                                         agents_groupby = 'building_type_id', segment_ids = [2,3,20,24])
+                     #Residential
+                    census_model_simulation.simulate_residential(dset, 'unit_price_res_sqft', 'school_district_id', 10, sim_year)
+
                     #Non-residential                                    
                     regression_model_simulation.simulate(dset, year=sim_year,output_varname='unit_price_non_residential', simulation_table='buildings', output_names = ["drcog-coeff-nrhedonic-%s.csv","DRCOG NRHEDONIC MODEL (%s)","nrprice_%s"],
                                                          agents_groupby = 'building_type_id', segment_ids = [5,8,11,16,17,18,21,23,9,22])
@@ -131,6 +136,9 @@ class Urbansim2(Model):
             e = dset.store.establishments
             b = dset.store.buildings
             p = dset.store.parcels.set_index('parcel_id')
+            if p.index.name != 'parcel_id':
+                p=p.set_index(p['parcel_id'])
+
             b['county_id'] = p.county_id[b.parcel_id].values
             hh['county_id'] = b.county_id[hh.building_id].values
             e['county_id'] = b.county_id[e.building_id].values
@@ -144,6 +152,8 @@ class Urbansim2(Model):
             e = dset.fetch('establishments')
             hh = dset.fetch('households')
             p = dset.fetch('parcels')
+            if p.index.name != 'parcel_id':
+                p = p.set_index(p['parcel_id'])
             b['county_id'] = p.county_id[b.parcel_id].values
             hh['county_id'] = b.county_id[hh.building_id].values
             e['county_id'] = b.county_id[e.building_id].values
@@ -199,13 +209,13 @@ class Urbansim2(Model):
                     logger.log_status('NO ru action.')
                     i = i + 1
                 elif math.isnan(prop_ru) or (prop_ru < target_ru):
-                    county_args.chh_demand_factor[cid] = county_args.chh_demand_factor[cid] + .1
-                    county_args.cres_price_factor[cid] = county_args.cres_price_factor[cid] + .1
+                    county_args.chh_demand_factor[cid] = county_args.chh_demand_factor[cid].astype(float) + 0.01
+                    county_args.cres_price_factor[cid] = county_args.cres_price_factor[cid].astype(float) + 0.01
                     print 'ru action is PLUS'
                     logger.log_status('ru action is PLUS')
                 elif prop_ru > target_ru:
-                    county_args.chh_demand_factor[cid] = county_args.chh_demand_factor[cid] - .1
-                    county_args.cres_price_factor[cid] = county_args.cres_price_factor[cid] - .1
+                    county_args.chh_demand_factor[cid] = county_args.chh_demand_factor[cid].astype(float) - 0.01
+                    county_args.cres_price_factor[cid] = county_args.cres_price_factor[cid].astype(float) - 0.01
                     print 'ru action is MINUS'
                     logger.log_status('ru action is MINUS')
                     
@@ -244,14 +254,16 @@ class Urbansim2(Model):
                     logger.log_status('NO nonres action.')
                     m = m + 1
                 elif math.isnan(prop_nonres) or (prop_nonres < target_nonres):
-                    county_args.cemp_demand_factor[cid] = county_args.cemp_demand_factor[cid] + .1
-                    county_args.cnonres_price_factor[cid] = county_args.cnonres_price_factor[cid] + .1
+                    county_args.cemp_demand_factor[cid] = county_args.cemp_demand_factor[cid].astype(float) + 0.01
+                    county_args.cnonres_price_factor[cid] = county_args.cnonres_price_factor[cid].astype(float) + 0.01
+                    print county_args.cnonres_price_factor[cid]
                     print 'nonres action is PLUS'
                     logger.log_status('nonres action is PLUS')
                 elif prop_nonres > target_nonres:
-                    county_args.cemp_demand_factor[cid] = county_args.cemp_demand_factor[cid] - .1
-                    county_args.cnonres_price_factor[cid] = county_args.cnonres_price_factor[cid] - .1
+                    county_args.cemp_demand_factor[cid] = county_args.cemp_demand_factor[cid].astype(float) - 0.01
+                    county_args.cnonres_price_factor[cid] = county_args.cnonres_price_factor[cid].astype(float) - 0.01
                     print 'nonres action is MINUS'
+                    print county_args.cnonres_price_factor[cid]
                     logger.log_status('nonres action is MINUS')
                     
             print i,j,k,m
