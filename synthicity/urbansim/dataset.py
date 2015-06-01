@@ -88,6 +88,9 @@ class Dataset(object):
 
   def load_coeff(self,name):
     return self.coeffs[(name,'coeffs')].dropna()
+
+  def load_coeff_res(self,name):
+    return self.coeffs_res[(name,'coeffs')].dropna()
   
   def load_fnames(self,name):
     return self.coeffs[(name,'fnames')].dropna()

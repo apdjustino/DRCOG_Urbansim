@@ -18,10 +18,11 @@ forms = {
     #'mixedoffice':      arr([0.0,0.0,0.7,0.3])  ####Turn back on if I can find a DRCOG btype to map this to...
     }
 
-#PROFITFACTOR = 1.1 # ratio times break even rent.  The lower this is, the more gets constructed.  I decreased this from 1.4 to 1.1
+#PROFITFACTOR = 1.1 # ratio times break even rent.  The lower this is, the more gets constructed.
 EFFICIENCY = .8 # interior building efficient
 PARCELUSE = .8 # efficiency of footprint on parcel
-INTERESTRATE = .05 # interest rate
+#INTERESTRATE = .05 # interest rate
+INTERESTRATE =1.0
 PERIODS = 20 # number of periods (years)
 
 parking_rates = arr([2.0,.8,1.0,1.2]) # per uses above and per thousands of sqft
@@ -29,12 +30,21 @@ SQFTPERRATE = 1000.0
 
 parking_configs = ['surface','deck','underground']
 
+"""
 costs = np.transpose(np.array([ \
 [80.0,110.0,120.0,130.0], #retail
 [80.0,110.0,120.0,130.0], #industrial
 [100.0,140.0,200.0,250.0], # office
 [120.0,140.0,200.0,250.0], # multifamily
 ]))
+"""
+costs = np.transpose(np.array([ \
+[80.0,110.0,120.0,130.0], #retail
+[80.0,110.0,120.0,130.0], #industrial
+[100.0,140.0,200.0,250.0], # office
+[120.0,140.0,200.0,250.0], # multifamily
+]))
+
 costs = costs*.9 #Decreasing costs relative to the Bay
 heightsforcosts = [15,55,120,np.inf] # max height for each of the costs above from left to right, same for all uses
 
@@ -124,7 +134,10 @@ class Developer:
       break_even_weighted_rent = self.PROFITFACTOR*yearly_cost_per_sqft*-1.0
       if name == 'retail': break_even_weighted_rent[np.where(fars>MAXRETAILHEIGHT)] = np.nan
       if name == 'industrial': break_even_weighted_rent[np.where(fars>MAXINDUSTRIALHEIGHT)] = np.nan
-      df['even_rent'] = break_even_weighted_rent
+      #df['even_rent'] = break_even_weighted_rent
+      df['even_rent'] = building_cost(uses_distrib,stories,df)
+
+
 
       df_d[(name,parking_config)] = df
 
@@ -149,10 +162,13 @@ class Developer:
  # rents is a matrix of rents of shape (numparcels x numuses)
  # land_costs is the current yearly rent on each parcel
  # parcel_size is the size of the parcel
+
  def lookup(self,form,rents,land_costs,parcel_sizes):
 
   print form, time.ctime()
+
   rents = np.dot(rents,forms[form]) # get weighted rent for this form
+  print rents.mean()
 
   even_rents = self.min_even_rents_d[form]
   # print "sqft cost\n", even_rents
@@ -162,22 +178,39 @@ class Developer:
   building_costs = building_bulks * np.reshape(even_rents.values,(1,-1)) / INTERESTRATE # cost to build the new building
 
   building_costs += np.reshape(land_costs.values,(-1,1)) / INTERESTRATE # add cost to buy the current building
-  #print building_bulks
+
   building_revenue = building_bulks * np.reshape(rents,(-1,1)) / INTERESTRATE # rent to make for the new building
+
 
   profit = building_revenue.values - building_costs.values # profit for each form
 
+
   maxprofitind = np.argmax(profit,axis=1) # index maximum total profit
+
   maxprofit = profit[np.arange(maxprofitind.size),maxprofitind] # value of the maximum total profit
 
   maxprofit_fars = pd.Series(even_rents.index[maxprofitind].astype('float'),index=parcel_sizes.index) # far of the max profit
+
   maxprofit = pd.Series(maxprofit.astype('float'),index=parcel_sizes.index)
   maxprofit.values[maxprofit<0] = np.nan # remove unprofitable buildings
   maxprofit_fars.values[np.isnan(maxprofit)] = np.nan  # remove far of unprofitable building
 
+
   # print maxprofit_fars.value_counts()
 
   return maxprofit_fars.astype('float32'), maxprofit
+
+
+ def profit(self, form, rents, land_costs, parcel_sizes):
+
+
+  rents = np.dot(rents,forms[form])
+  even_rents = self.min_even_rents_d[form]
+  building_bulks = np.reshape(parcel_sizes,(-1,1))
+  buidling_revenue=building_bulks*np.reshape(rents, (-1,1))
+  building_costs=building_bulks*np.reshape(even_rents.values, (-1,1))+ np.reshape(land_costs.values,(-1,1))
+
+  return np.max(buidling_revenue-building_costs,0)
 
  # this code creates the debugging plots to understand the behavior of
  # the hypothetical building model

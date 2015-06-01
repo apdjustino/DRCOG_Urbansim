@@ -1,10 +1,7 @@
 import pandas as pd, numpy as np, time, os
-from sqlalchemy import *
 
 def run(dset, indicator_output_directory, forecast_year):
 
-
-    engine = create_engine('postgresql://postgres:postgres@localhost:5432/postgres', echo=False)
     z_index = dset.zones.index
     zone_index = pd.Series(index=z_index).fillna(0)
 
@@ -15,6 +12,7 @@ def run(dset, indicator_output_directory, forecast_year):
     p = dset.store.parcels.set_index('parcel_id')
     z = dset.zones
     b['zone_id'] = p.zone_id[b.parcel_id].values
+    b['unit_price_res_sqft']=b['unit_price_residential']/b['bldg_sq_ft']
     hh['zone_id'] = b.zone_id[hh.building_id].values
     e['zone_id'] = b.zone_id[e.building_id].values
     b['county_id'] = p.county_id[b.parcel_id].values
@@ -35,8 +33,8 @@ def run(dset, indicator_output_directory, forecast_year):
     base_emp4_county = e[e.sector_id_six==4].groupby('county_id').employees.sum()
     base_emp5_county = e[e.sector_id_six==5].groupby('county_id').employees.sum()
     base_emp6_county = e[e.sector_id_six==6].groupby('county_id').employees.sum()
-    base_res_price_county = b.groupby('county_id').unit_price_residential.mean()
-    base_non_res_price_county = b.groupby('county_id').unit_price_non_residential.mean()
+    base_res_price_county = b[b['bldg_sq_ft']>0].groupby('county_id').unit_price_residential.mean()
+    base_non_res_price_county = b[(np.in1d(b.building_type_id,[5,9,17,18,22]))].groupby('county_id').unit_price_non_residential.mean()
     base_year_building_count = b.groupby('county_id').size()
 
     ##Base year zonal indicators
@@ -66,15 +64,18 @@ def run(dset, indicator_output_directory, forecast_year):
     base_emp6_zone = base_emp6_zone.fillna(0)
     base_nr_zone = base_nr_zone.fillna(0)
     base_res_price_zone = b.groupby('zone_id').unit_price_residential.mean()
-    base_non_res_price_zone = b.groupby('zone_id').unit_price_non_residential.mean()
+    base_non_res_price_zone = b[(np.isfinite(b.unit_price_non_residential))*(np.in1d(b.building_type_id,[5,9,17,18,22]))*(b.non_residential_sqft>0)].groupby('zone_id').unit_price_non_residential.mean()
     base_zone_building_count = b.groupby('zone_id').size()
 
 
     ##Forecast year indicators
-    b = dset.fetch('buildings')
+    b = dset.buildings
+
     e = dset.fetch('establishments')
     hh = dset.fetch('households')
     p = dset.fetch('parcels')
+    if p.index.name != 'parcel_id':
+        p = p.set_index(p['parcel_id'])
     b['county_id'] = p.county_id[b.parcel_id].values
     hh['county_id'] = b.county_id[hh.building_id].values
     e['county_id'] = b.county_id[e.building_id].values
@@ -104,6 +105,10 @@ def run(dset, indicator_output_directory, forecast_year):
     sim_emp4_zone = e[e.sector_id_six==4].groupby('zone_id').employees.sum()
     sim_emp5_zone = e[e.sector_id_six==5].groupby('zone_id').employees.sum()
     sim_emp6_zone = e[e.sector_id_six==6].groupby('zone_id').employees.sum()
+
+
+
+
     sim_nr_zone = b.groupby('zone_id').non_residential_sqft.sum()
     hh_diff_county = sim_hh_county - base_hh_county
     pop_diff_county = sim_pop_county - base_pop_county
@@ -127,8 +132,12 @@ def run(dset, indicator_output_directory, forecast_year):
     diff_emp5_zone = sim_emp5_zone - base_emp5_zone
     diff_emp6_zone = sim_emp6_zone - base_emp6_zone
     diff_nr_zone = sim_nr_zone - base_nr_zone
-    sim_res_price_county = b.groupby('county_id').unit_price_residential.mean()
-    sim_non_res_price_county = b.groupby('county_id').unit_price_non_residential.mean()
+
+
+    sim_res_price_county = b[(np.in1d(b.building_type_id,[2,3,20,24]))*(b['bldg_sq_ft2']>0)].groupby('county_id').unit_price_residential.mean()
+    sim_non_res_price_county = b[(np.isfinite(b.unit_price_non_residential))*(np.in1d(b.building_type_id,[5,9,17,18,22]))*(b.non_residential_sqft>0)].groupby('county_id').unit_price_non_residential.mean()
+    sim_non_res_price_office=b[(np.isfinite(b.unit_price_non_residential))*(np.in1d(b.building_type_id,[5]))*(b.non_residential_sqft>0)].groupby('county_id').unit_price_non_residential.mean()
+
     sim_res_price_zone = b.groupby('zone_id').unit_price_residential.mean()
     sim_non_res_price_zone = b.groupby('zone_id').unit_price_non_residential.mean()
     diff_res_price_county = sim_res_price_county - base_res_price_county
@@ -235,6 +244,7 @@ def run(dset, indicator_output_directory, forecast_year):
     csumm['non_res_price_base'] = base_non_res_price_county
     csumm['res_price_sim'] = sim_res_price_county
     csumm['non_res_price_sim'] = sim_non_res_price_county
+    csumm['non_res_price_office_sim'] = sim_non_res_price_office
     csumm['res_price_diff'] = diff_res_price_county
     csumm['non_res_price_diff'] = diff_non_res_price_county
 
@@ -243,11 +253,8 @@ def run(dset, indicator_output_directory, forecast_year):
     csumm['building_count'] = building_count_county
     csumm['base_building_count']=base_year_building_count
 
+    #csumm['ln_pop_within_20min_sim']=sim_pop_20min
+
     ######
     csumm.to_csv(os.path.join(indicator_output_directory,'county_summary%s_%s.csv' % (forecast_year,time.strftime('%c').replace('/','').replace(':','').replace(' ',''))))
     zsumm.to_csv(os.path.join(indicator_output_directory,'zone_summary%s_%s.csv' % (forecast_year,time.strftime('%c').replace('/','').replace(':','').replace(' ',''))))
-
-    csumm.to_sql('county_summary', engine, if_exists='append')
-    zsumm.to_sql('zone_summary', engine, if_exists='append')
-
-
