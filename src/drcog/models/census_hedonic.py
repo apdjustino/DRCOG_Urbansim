@@ -53,7 +53,7 @@ def data_zone(dset,buildings, parcels,zones,establishments):
     z['residential_sqft_mean']=b[np.in1d(b['building_type_id'], [2,3,20,24])].groupby('zone_id').bldg_sq_ft.mean()
     z['ln_residential_sqft_mean']=np.log(z['residential_sqft_mean'])
 
-    z['median_value']=b.groupby('zone_id').unit_price_residential.mean()
+    #z['median_value']=b.groupby('zone_id').unit_price_residential.mean()
 
 
     del z['job_within_30min']
@@ -72,6 +72,11 @@ def data_zone(dset,buildings, parcels,zones,establishments):
     z['zonecentroid_xy']=np.log(z['zonecentroid_x'])*np.log(z['zonecentroid_y'])
     z['ln_zonecentroid_x']=np.log(z['zonecentroid_x'])
     z['ln_zonecentroid_y']=np.log(z['zonecentroid_y'])
+    z['zonecentroid_x3']=np.log(z['zonecentroid_x'])**3
+    z['zonecentroid_y3']=np.log(z['zonecentroid_y'])**3
+    z['zonecentroid_x4']=np.log(z['zonecentroid_x'])**4
+    z['zonecentroid_y4']=np.log(z['zonecentroid_y'])**4
+
 
     del z['median_year_built']
 
@@ -82,7 +87,7 @@ def data_zone(dset,buildings, parcels,zones,establishments):
 def data_zone_census( zones):
 
     data_census=pd.read_csv('C:\Users\XGitiaux\Documents\Price UrbanSim\Data/census_zone.csv')
-    del data_census['median_value']
+    #del data_census['median_value']
     data=pd.merge(zones, data_census, on='zone_id', how='inner')
 
 
@@ -100,7 +105,9 @@ def data_zone_census( zones):
                 +data['Native Hawaiian and Other Pacific Islander alone'].apply(float)+ data['Some other race alone'].apply(float)\
                 +data['two races or more'].apply(float)
     data['percent_white']=np.log(data['White alone']/data['all races'])
-    data['percent_black']=np.log(data['Black or African American alone']/data['all races'])
+    data['percent_black']=data['Black or African American alone']/data['all races']
+    data['percent_black2']=data['Black or African American alone']/data['all races']**2
+    data['ln_residential_sqft_mean2']=data['ln_residential_sqft_mean']**2
 
 
     # Creating max  and min income of neighbors ( can important have implications in terms of gentrification)
@@ -148,8 +155,12 @@ def instrument(depvar, indvar, data, instr, fixedeffect):
 
     # Fill the righ hand side with instruments
     collist=list(inst)
-    for varname in collist:
+    for varname in collist :
         x[varname]=inst[varname]
+
+    # Fill the righ hand side with exogenous variables
+    for varname in indvar:
+        x[varname]=data[varname]
 
     # Add a constant
     x['cons']=1
@@ -157,6 +168,7 @@ def instrument(depvar, indvar, data, instr, fixedeffect):
     # Regression (here simply OLS, but something else could be used)
     mod=sm.OLS(data[depvar], x)
     result=mod.fit()
+    print result.summary()
 
 
     # Store the predicted value (that will be used on the right hand side in the second stage)
@@ -177,6 +189,7 @@ def second_stage(depvar, indvar, data, instrumented, instr, indvariv, fixedeffec
     for varname in depvar + indvar + fixedeffect:
         data=data[np.isfinite(data[varname])]
 
+    #data=data[data['median_value']<400000]
     # Generate dummies for categorical variables and remove one of them (to avoid multi-collinearity)
     x=pd.get_dummies(data['school_district_id'], prefix='sdis')
     del x['sdis_8']
@@ -187,7 +200,7 @@ def second_stage(depvar, indvar, data, instrumented, instr, indvariv, fixedeffec
 
     # Replace the instrumented variable by ita predictor from stage one
     for varname in instrumented:
-        x[varname]=data[varname+ '_iv']
+        x[varname]=data[varname+'_iv']
 
     # Add a constant
     x['const']=1
@@ -195,7 +208,7 @@ def second_stage(depvar, indvar, data, instrumented, instr, indvariv, fixedeffec
     print x
 
     # Main Regression. GLM estimation using a Negative Binomial family (it seems to work better than other families)
-    mod=sm.GLM(data[depvar], x, family=sm.families.NegativeBinomial())
+    mod=sm.GLM(data[depvar], x, family=sm.families.Poisson())
     result=mod.fit()
 
 
@@ -210,7 +223,7 @@ def second_stage(depvar, indvar, data, instrumented, instr, indvariv, fixedeffec
     coeff_store.close()
 
     # Predicted Prices
-    data['sim_price']=result.predict()*data['median_income']
+    data['sim_price']=result.predict()
     print result.summary()
     return data
 
@@ -220,13 +233,16 @@ from drcog.models import dataset
 dset = dataset.DRCOGDataset(os.path.join(misc.data_dir(),'drcog.h5'))
 zones=data_zone(dset,dset.buildings, dset.parcels,dset.zones,dset.establishments)
 data=data_zone_census(zones)
-data['val_inc']=data['median_value']/np.exp(data['ln_inc'])
-ind_var=[ 'ln_job_within_30min','zonecentroid_x','zonecentroid_y','zonecentroid_x2','zonecentroid_y2', 'zonecentroid_xy',
-         'median_yearbuilt_post_2000','median_yearbuilt_pre_1970','ln_non_residential_sqft_mean','ln_residential_sqft_mean', 'ln_neigh_income_max', 'ln_neigh_income_min']
+data['val_inc']=data['median_value']
+ind_var=[ 'ln_job_within_30min','zonecentroid_x','zonecentroid_y','zonecentroid_x2','zonecentroid_y2', 'zonecentroid_xy','zonecentroid_x3','zonecentroid_y3','zonecentroid_x4','zonecentroid_y4',
+         'median_yearbuilt_post_2000','median_yearbuilt_pre_1970','ln_non_residential_sqft_mean','ln_residential_sqft_mean', 'ln_neigh_income_max', 'ln_neigh_income_min', 'percent_black']
+ind_var0=[ 'ln_job_within_30min','zonecentroid_x','zonecentroid_y','zonecentroid_x2','zonecentroid_y2', 'zonecentroid_xy','zonecentroid_x3','zonecentroid_y3','zonecentroid_y3','zonecentroid_x4','zonecentroid_y4',
+         'median_yearbuilt_post_2000','median_yearbuilt_pre_1970','ln_non_residential_sqft_mean','ln_residential_sqft_mean', 'percent_black']
 
 
-data=second_stage(['val_inc'], ind_var,data, ['ln_inc'], ['Year_move'],ind_var , ['school_district_id'])
-
+data=second_stage(['val_inc'], ind_var,data, ['ln_inc'], ['Year_move'],ind_var0 , ['school_district_id'])
+print data[data['median_value']>400000]['sim_price'].mean()
+print data[data['median_value']>400000]['median_value'].mean()
 plt.plot(data['sim_price'], data['median_value'], 'ro')
 plt.show()
 """
