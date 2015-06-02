@@ -48,7 +48,7 @@ def simulate_residential_zone(dset, depvar, fixedeffect):
 
     rents=pd.DataFrame(rents_zonal, index=data.index)
     rents.columns=['zonal_rent']
-    rents['zonal_rent']=np.exp(rents['zonal_rent'])*data['median_income']
+    rents['zonal_rent']=np.exp(rents['zonal_rent'])
 
 
     return rents

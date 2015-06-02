@@ -16,11 +16,15 @@ def calculate_variables(dset):
     zone_county=zone_county[['county_id']]
     p=pd.merge(p,zone_county, left_on='zone_id', right_index=True)
     pu=p
-
     #end of fix
+
+
 
     if p.index.name != 'parcel_id':
        p = p.set_index('parcel_id')
+
+    print p[p.zone_id==1725].x
+
     p['in_denver'] = (p.county_id==8031).astype('int32')
     p['ln_dist_rail'] = p.dist_rail.apply(np.log1p)
     p['ln_dist_bus'] = p.dist_bus.apply(np.log1p)
@@ -129,6 +133,12 @@ def calculate_variables(dset):
 
     z['zonal_hh'] = hh.groupby('zone_id').size()
     z['zonal_emp'] = e.groupby('zone_id').employees.sum()
+
+    z['zone_id']=z.index
+    print z.columns
+    print z[z['zone_id']==1722]['zonal_emp']
+    del z['zone_id']
+
     z['zonal_pop'] = hh.groupby('zone_id').persons.sum()
     z['residential_units_zone'] = b.groupby('zone_id').residential_units.sum()
     z['ln_residential_units_zone'] = b.groupby('zone_id').residential_units.sum().apply(np.log1p)

@@ -27,7 +27,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     zdiff.emp_zone2 = zdiff.emp_zone2+5
     hh_zone_diff = (zdiff.hh_zone2 - zdiff.hh_zone1)
     emp_zone_diff = (zdiff.emp_zone2 - zdiff.emp_zone1)
-    #emp_zone_diff = 0.1*(zdiff.emp_zone2)
+
 
 
     #####Get the user inputted zone args
