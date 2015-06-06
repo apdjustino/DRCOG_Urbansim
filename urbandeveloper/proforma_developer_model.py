@@ -35,17 +35,17 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
         zone_args = pd.read_csv(os.path.join(misc.data_dir(),'devmodal_zone_args.csv')).set_index('zone_id')
         ##Getting county_id into zone_args.  Eventually, lets move the dset.zones operations to the varlib
         dset.zones['county_id'] = 0
-        dset.zones.county_id[dset.zones.county=='Adams'] = 8001
-        dset.zones.county_id[dset.zones.county=='Arapahoe'] = 8005
-        dset.zones.county_id[dset.zones.county=='Boulder'] = 8013
-        dset.zones.county_id[dset.zones.county=='Broomfield'] = 8014
-        dset.zones.county_id[dset.zones.county=='Clear Creek'] = 8019
-        dset.zones.county_id[dset.zones.county=='Denver'] = 8031
-        dset.zones.county_id[dset.zones.county=='Douglas'] = 8035
-        dset.zones.county_id[dset.zones.county=='Elbert'] = 8039
-        dset.zones.county_id[dset.zones.county=='Gilpin'] = 8047
-        dset.zones.county_id[dset.zones.county=='Jefferson'] = 8059
-        dset.zones.county_id[dset.zones.county=='Weld'] = 8123
+        dset.zones.loc[dset.zones.county == 'Adams', "county_id"] = 8001  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Arapahoe', "county_id"] = 8005  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Boulder', "county_id"] = 8013  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Broomfield', "county_id"] = 8014  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Clear Creek', "county_id"] = 8019  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Denver', "county_id"] = 8031  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Douglas', "county_id"] = 8035  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Elbert', "county_id"] = 8039  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Gilpin', "county_id"] = 8047  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Jefferson', "county_id"] = 8059  # corrected chained index error
+        dset.zones.loc[dset.zones.county == 'Weld', "county_id"] = 8123  # corrected chained index error
         zone_args['cid'] = dset.zones.county_id
         pd.set_option('display.max_rows', 1000)
 
@@ -66,7 +66,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     # #### Getting possible rents by use here ##
     # ##########################################
     buildings = buildings[['building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','unit_price_non_residential','unit_price_residential','building_sqft_per_job','non_residential_units','base_year_jobs','all_units', 'unit_price_res_sqft']]
-    buildings['zone_id'] = parcels.zone_id[buildings.parcel_id].values
+    buildings.loc[:, "zone_id"] = parcels.zone_id[buildings.parcel_id].values  #  corrected chain index error
 
     res_buildings = buildings[buildings.unit_price_residential>0]
     nonres_buildings = buildings[buildings.unit_price_non_residential>0]
@@ -77,7 +77,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     # Price now are in price/sqft
     #### XG: define residential price only on types 2,3, 20, 24 and non-residential 5, 9, 17,18,22
     zone_args['zone_id']=zone_args.index
-    res_buildings['resprice_sqft'] = res_buildings[(res_buildings.bldg_sq_ft>0)*(np.in1d(res_buildings.building_type_id,[2,3,20,24]))].unit_price_res_sqft
+    res_buildings.loc[:, "resprice_sqft"] = res_buildings[(res_buildings.bldg_sq_ft>0)*(np.in1d(res_buildings.building_type_id,[2,3,20,24]))].unit_price_res_sqft  # corrected chain index error
     zonal_resprice_sqft = pd.DataFrame(res_buildings[(res_buildings.bldg_sq_ft>0)*(np.in1d(res_buildings.building_type_id,[2,3,20,24]))].groupby('zone_id').resprice_sqft.mean())
     zonal_resprice_sqft.columns=['resrent']
     zone_args=pd.merge(zone_args,zonal_resprice_sqft, left_on='zone_id', right_index=True, how='outer')
@@ -95,8 +95,8 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     zone_args['nonresrent_retail']=zone_args['nonresrent_retail']* zone_args.nonres_price_factor
     zone_args['nonresrent_industrial']=zone_args['nonresrent_industrial']* zone_args.nonres_price_factor
     zonal_avg_rents= zone_args[['resrent', 'nonresrent_office', 'nonresrent_retail','nonresrent_industrial','cost_factor','allowable_density_factor']]
-    zonal_avg_rents['zone_id']=zonal_avg_rents.index
-    zonal_avg_rents['county_id']=dset.zones.county_id[zonal_avg_rents['zone_id']].values
+    zonal_avg_rents.loc[:, "zone_id"] = zonal_avg_rents.index  #  corrected chain index error
+    zonal_avg_rents.loc[:, 'county_id'] = dset.zones.county_id[zonal_avg_rents['zone_id']].values  # corrected chain index error
     pd.set_option('display.max_rows', len(dset.zones.index))
     del  zonal_avg_rents['county_id']
     del zonal_avg_rents['zone_id']
@@ -145,17 +145,17 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     avgrents = avgrents.fillna(.1)
 
     #avgrents.residential[np.isinf(avgrents.residential)] = .2
-    avgrents.residential[avgrents.residential<.2] = .2
-    avgrents.office[avgrents.office<1] = 1
-    avgrents.retail[avgrents.retail<1] = 1
-    avgrents.industrial[avgrents.industrial<1] = 1
+    avgrents.loc[avgrents.residential < .2, "residential"] = .2  # corrected chain index error
+    avgrents.loc[avgrents.office < 1, "office"] = 1  # corrected chain index error
+    avgrents.loc[avgrents.retail < 1, "retail"] = 1  # corrected chain index error
+    avgrents.loc[avgrents.industrial < 1, "industrial"] = 1  # corrected chain index error
 
     ####################GET PARCEL LEVEL ATTRIBUTES
     #### XG: retain old square footage as it is used to compute average
-    buildings['bldg_sq_ft2'] =  buildings['bldg_sq_ft']
-    buildings['bldg_sq_ft'] = buildings.non_residential_sqft + buildings.residential_units*buildings.sqft_per_unit
+    buildings.loc[:, 'bldg_sq_ft2'] = buildings['bldg_sq_ft']  # corrected chain index error
+    buildings.loc[:, 'bldg_sq_ft'] = buildings.non_residential_sqft + buildings.residential_units*buildings.sqft_per_unit  # corrected chain index error
     #buildings['impval'] = buildings.non_residential_sqft*buildings.unit_price_non_residential + buildings.residential_units*buildings.unit_price_residential
-    buildings['impval']=0
+    buildings.loc[:, 'impval'] = 0  # corrected chain index error
     buildings.loc[buildings.residential_units*buildings.unit_price_residential>0,'impval'] = buildings.residential_units*buildings.unit_price_residential
     buildings.loc[buildings.non_residential_sqft*buildings.unit_price_non_residential >0,'impval']=buildings['impval']+ buildings.non_residential_sqft*buildings.unit_price_non_residential
     far_predictions = pd.DataFrame(index=parcels.index)
@@ -198,8 +198,8 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
             parcels[max_far_field][parcels.in_ugb==0] = parcels[max_far_field][parcels.in_ugb==0] * developer_configuration['outside_ugb_allowable_density']
         if developer_configuration['uga_policies']:
             parcels[max_far_field][parcels.in_uga==1] = parcels[max_far_field][parcels.in_ugb==1] * developer_configuration['inside_uga_allowable_density']
-        parcels[max_far_field][parcels.parcel_sqft<developer_configuration['min_lot_sqft']] = 0
-        parcels[max_far_field][parcels.parcel_sqft>max_parcel_sqft] = 0
+        parcels.loc[parcels.parcel_sqft < developer_configuration['min_lot_sqft'], "max_far_field"] = 0  # fixed chained index error
+        parcels.loc[parcels.parcel_sqft > max_parcel_sqft, "max_far_field"] = 0  # fixed chained indexing error
     if 'type1' not in parcels.columns:
         parcels = pd.merge(parcels,zoning,left_on='zoning_id',right_index=True)
     ##Scale allowable FARs here if needed
@@ -274,7 +274,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
         pshift_zone.append(item[0][1])
         pshift_shift.append(item[1])
     pshift = pd.DataFrame({'btype':pshift_btypes,'zone':pshift_zone,'shift_amount':pshift_shift})
-    buildings['zone_id'] = dset.parcels.zone_id[buildings.parcel_id].values
+    buildings['zone_id'] = parcels.loc[buildings.parcel_id, "zone_id"].values
     buildings['bid'] = buildings.index.values
     buildings = pd.merge(buildings,pshift,left_on=['building_type_id','zone_id'],right_on=['btype','zone'],how='left')
     buildings.shift_amount = buildings.shift_amount.fillna(1.0)
@@ -289,9 +289,9 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
 
     newbuildings.columns = ['parcel_id','building_type_id','bldg_sq_ft','residential_units','land_area']
     newbuildings.parcel_id = newbuildings.parcel_id.astype('int32')
-    newbuildings['county_id']=parcel_predictions.county_id[newbuildings.parcel_id]
+    #newbuildings['county_id']=parcel_predictions.county_id[newbuildings.parcel_id].values  # why is this here?
 
-    print newbuildings[newbuildings.residential_units == 0].groupby('county_id').bldg_sq_ft.sum()
+    #print newbuildings[newbuildings.residential_units == 0].groupby('county_id').bldg_sq_ft.sum()
     newbuildings.residential_units = newbuildings.residential_units.astype('int32')
     newbuildings.land_area = newbuildings.land_area.astype('int32')
     newbuildings.building_type_id = newbuildings.building_type_id.astype('int32')
@@ -300,27 +300,29 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     newbuildings.bldg_sq_ft2 = np.round(newbuildings.bldg_sq_ft).astype('int32')
 
     newbuildings['non_residential_sqft'] = 0
-    newbuildings.non_residential_sqft[newbuildings.residential_units == 0] = newbuildings.bldg_sq_ft
+    newbuildings.loc[newbuildings.residential_units == 0, "non_residential_sqft"] = newbuildings.bldg_sq_ft
     newbuildings['improvement_value'] = (newbuildings.non_residential_sqft*100 + newbuildings.residential_units*100000).astype('int32')
     newbuildings['sqft_per_unit'] = 1400
-    newbuildings.sqft_per_unit[newbuildings.residential_units>0] = 1000
+    newbuildings.loc[newbuildings.residential_units>0, "sqft_per_unit"] = 1000
     newbuildings['stories'] = np.ceil(newbuildings.bldg_sq_ft*1.0/newbuildings.land_area).astype('int32')
     newbuildings['tax_exempt'] = 0
     newbuildings['year_built'] = sim_year
     newbuildings['unit_price_residential'] = 0.0
-    newbuildings.unit_price_residential[newbuildings.residential_units>0] = buildings[buildings.unit_price_residential>0].unit_price_residential.median()
+    newbuildings.loc[newbuildings.residential_units>0, "unit_price_residential"] = buildings[buildings.unit_price_residential>0].unit_price_residential.median()
 
     newbuildings['unit_price_res_sqft'] = 0.0
-    newbuildings.unit_price_res_sqft[newbuildings.residential_units>0] = buildings[buildings.unit_price_res_sqft>0].unit_price_res_sqft.median()
+    newbuildings.loc[newbuildings.residential_units>0, "unit_price_res_sqft"] = buildings[buildings.unit_price_res_sqft>0].unit_price_res_sqft.median()
 
     newbuildings['unit_price_non_residential'] = 0.0
-    newbuildings.unit_price_non_residential[newbuildings.non_residential_sqft>0] = buildings[buildings.unit_price_non_residential>0].unit_price_non_residential.median()
+    newbuildings.loc[newbuildings.non_residential_sqft>0, "unit_price_non_residential"] = buildings[buildings.unit_price_non_residential>0].unit_price_non_residential.median()
 
     ##### XG: originally, impose exogenous prices for new buildings. Now impose average county price
-    newbuildings['county_id'] = dset.parcels.county_id[newbuildings.parcel_id].values
+    #newbuildings['county_id'] = dset.parcels.county_id[newbuildings.parcel_id].values  # improper join - index incorrect
+    newbuildings['county_id'] = parcels.loc[newbuildings.parcel_id, "county_id"].values
 
-    buildings['county_id'] = dset.parcels.county_id[buildings.parcel_id].values
-    u=pd.DataFrame(buildings[(buildings.bldg_sq_ft2>0)*(np.in1d(buildings.building_type_id,[2,3,20,24]))] .groupby('county_id').unit_price_res_sqft.mean())
+    #buildings['county_id'] = dset.parcels.county_id[buildings.parcel_id].values  # improper join - index incorrect
+    buildings['county_id'] = parcels.loc[buildings.parcel_id, "county_id"].values
+    u=pd.DataFrame(buildings[(buildings.bldg_sq_ft2>0)*(np.in1d(buildings.building_type_id,[2,3,20,24]))].groupby('county_id').unit_price_res_sqft.mean())
     u.columns=['res_price_county']
 
     newbuildings=pd.merge(newbuildings, u, left_on='county_id', right_index=True)
@@ -333,9 +335,9 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     u.columns=['unit_res_price_county']
     newbuildings=pd.merge(newbuildings, u, left_on='county_id', right_index=True)
 
-    newbuildings.unit_price_residential[(newbuildings.bldg_sq_ft>0)*(np.in1d(newbuildings.building_type_id,[2,3,20,24]))]  = newbuildings.unit_res_price_county
-    newbuildings.unit_price_res_sqft[(newbuildings.bldg_sq_ft>0)*(np.in1d(newbuildings.building_type_id,[2,3,20,24]))]  = newbuildings.res_price_county
-    newbuildings.unit_price_non_residential[(newbuildings.non_residential_sqft>0)*(np.in1d(newbuildings.building_type_id,[5,9,17,18,22]))] =newbuildings.nres_price_county
+    newbuildings.loc[(newbuildings.bldg_sq_ft>0)*(np.in1d(newbuildings.building_type_id,[2,3,20,24])), "unit_price_residential"] = newbuildings.unit_res_price_county
+    newbuildings.loc[(newbuildings.bldg_sq_ft>0)*(np.in1d(newbuildings.building_type_id,[2,3,20,24])), "unit_price_res_sqft"] = newbuildings.res_price_county
+    newbuildings.loc[(newbuildings.non_residential_sqft>0)*(np.in1d(newbuildings.building_type_id,[5,9,17,18,22])), "unit_price_non_residential"] = newbuildings.nres_price_county
     print newbuildings[(np.in1d(newbuildings.building_type_id,[2,3,20,24]))*(newbuildings['bldg_sq_ft']>0)].groupby('county_id').unit_price_res_sqft.mean()
     #### end XG
 

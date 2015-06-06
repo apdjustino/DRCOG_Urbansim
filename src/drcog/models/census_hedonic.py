@@ -86,7 +86,7 @@ def data_zone(dset,buildings, parcels,zones,establishments):
 
 def data_zone_census( zones):
 
-    data_census=pd.read_csv('C:\Users\XGitiaux\Documents\Price UrbanSim\Data/census_zone.csv')
+    data_census=pd.read_csv(os.path.join(misc.data_dir(),'census_zone.csv'))
     #del data_census['median_value']
     data=pd.merge(zones, data_census, on='zone_id', how='inner')
 

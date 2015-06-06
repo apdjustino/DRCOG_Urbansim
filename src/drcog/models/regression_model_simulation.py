@@ -16,6 +16,7 @@ def simulate(dset,year,output_varname = 'price',simulation_table = 'buildings',o
     simrents = []
 
     for name, segment in segments:
+        name = int(name) #convert name into interger
         tmp_outcsv, tmp_outtitle, tmp_coeffname = output_csv%name, output_title%name, coeff_name%name
         ind_vars = dset.coeffs[(tmp_coeffname, 'fnames')][np.invert(dset.coeffs[(tmp_coeffname, 'fnames')].isnull().values)].values.tolist()
         est_data = pd.DataFrame(index=segment.index)

@@ -39,7 +39,7 @@ def calculate_variables(dset):
     #BUILDING VARIABLES
     b = dset.fetch('buildings',building_sqft_per_job_table=elcm_configuration['building_sqft_per_job_table'],bsqft_job_scaling=elcm_configuration['scaling_factor'])
     b = b[['building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','unit_price_non_residential','unit_price_residential']]
-    b['zone_id'] = p.zone_id[b.parcel_id].values
+    b.loc[:, 'zone_id'] = p.zone_id[b.parcel_id].values
 
     bsqft_job = dset.building_sqft_per_job
     #bsqft_job.building_sqft_per_job = bsqft_job.building_sqft_per_job
@@ -78,19 +78,20 @@ def calculate_variables(dset):
     #HOUSEHOLD VARIABLES
     hh_estim = dset.fetch('households_for_estimation')
     hh_estim['tenure'] = 1
-    hh_estim.tenure[hh_estim.own>1] = 2
+    hh_estim.loc[hh_estim.own>1, "tenure"] = 2  # corrected chained index error
     hh_estim['income']=0
-    hh_estim.income[hh_estim.income_group==1] = 7500
-    hh_estim.income[hh_estim.income_group==2] = 17500
-    hh_estim.income[hh_estim.income_group==3] = 25000
-    hh_estim.income[hh_estim.income_group==4] = 35000
-    hh_estim.income[hh_estim.income_group==5] = 45000
-    hh_estim.income[hh_estim.income_group==6] = 55000
-    hh_estim.income[hh_estim.income_group==7] = 67500
-    hh_estim.income[hh_estim.income_group==8] = 87500
-    hh_estim.income[hh_estim.income_group==9] = 117500
-    hh_estim.income[hh_estim.income_group==10] = 142500
-    hh_estim.income[hh_estim.income_group==11] = 200000
+    hh_estim.loc[hh_estim.income_group==1, "income"] = 7500  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==2, "income"] = 17500  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==3, "income"] = 25000  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==4, "income"] = 35000  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==5, "income"] = 45000  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==6, "income"] = 55000  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==7, "income"] = 67500  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==8, "income"] = 87500  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==9, "income"] = 117500  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==10, "income"] = 142500  # corrected chained index error
+    hh_estim.loc[hh_estim.income_group==11, "income"] = 200000  # corrected chained index error
+
     hh = dset.fetch('households')
     for table in [hh_estim, hh]:
         choosers = table
@@ -231,7 +232,7 @@ def calculate_variables(dset):
     del b['zone_id']
     bpz = pd.merge(b,pz,left_on='parcel_id',right_index=True)
     bpz['residential_units_capacity'] = bpz.parcel_sqft/1500 - bpz.residential_units
-    bpz.residential_units_capacity[bpz.residential_units_capacity<0] = 0
+    bpz.loc[bpz.residential_units_capacity < 0, "residential_units_capacity"] = 0  # corrected chained index error
     dset.d['buildings'] = bpz
     if dset.parcels.index.name != 'parcel_id':
         dset.d['parcels'] = p

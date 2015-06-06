@@ -68,7 +68,7 @@ class Urbansim2(Model):
                                          relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)
                                          
             ############     DEMAND-SIDE REFINEMENT
-            refiner.run(dset, sim_year)
+            #refiner.run(dset, sim_year)
 
             ############     REPM SIMULATION
             if core_components_to_run['Price']:

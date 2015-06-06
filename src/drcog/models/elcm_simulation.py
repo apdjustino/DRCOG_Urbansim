@@ -22,7 +22,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     movers = choosers[choosers[depvar]==-1]
     print "Total new agents and movers = %d" % len(movers.index)
     alternatives.building_sqft_per_job = alternatives.building_sqft_per_job.fillna(1000)
-    alternatives['spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job
+    alternatives.loc[:, 'spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job  # corrected chained indexing error
     empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
 
     alts = alternatives.ix[empty_units.index]
@@ -42,7 +42,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         numalts = alts.shape[0]
         sample = np.tile(alts.index.values,numchoosers)
         alts_sample = alts #sample#alternatives
-        alts_sample['join_index'] = np.repeat(segment.index,SAMPLE_SIZE)
+        alts_sample['join_index'] = np.repeat(segment.index.values,SAMPLE_SIZE)
         alts_sample = pd.merge(alts_sample,segment,left_on='join_index',right_index=True,suffixes=('','_r'))
         chosen = np.zeros((numchoosers,SAMPLE_SIZE))
         chosen[:,0] = 1

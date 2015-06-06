@@ -42,7 +42,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     print "Total new agents and movers = %d" % len(movers.index)
     empty_units = dset.buildings[(dset.buildings.residential_units>0)].residential_units.sub(choosers.groupby('building_id').size(),fill_value=0)
     empty_units = empty_units[empty_units>0].order(ascending=False)
-    alternatives = alternatives.ix[np.repeat(empty_units.index,empty_units.values.astype('int'))]
+    alternatives = alternatives.ix[np.repeat(empty_units.index.values,empty_units.values.astype('int'))]
     alts = alternatives
     pdf = pd.DataFrame(index=alts.index)
 
@@ -58,7 +58,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         numalts = alts.shape[0]
         sample = np.tile(alts.index.values,numchoosers)
         alts_sample = alts
-        alts_sample['join_index'] = np.repeat(segment.index,SAMPLE_SIZE)
+        alts_sample.loc[:, 'join_index'] = np.repeat(segment.index.values,SAMPLE_SIZE)  # corrected chained index error
         alts_sample = pd.merge(alts_sample,segment,left_on='join_index',right_index=True,suffixes=('','_r'))
         chosen = np.zeros((numchoosers,SAMPLE_SIZE))
         chosen[:,0] = 1

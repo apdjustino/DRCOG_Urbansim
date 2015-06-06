@@ -30,7 +30,7 @@ def run(dset, current_year):
         # dset.households.building_id[idx_agents_to_relocate] = new_building_id
         try:
             new_building_id = b[b.zone_id==zone_id].index.values[0]
-            agents_joined.building_id[idx_agents_to_relocate] = new_building_id
+            agents_joined.loc[idx_agents_to_relocate, "building_id"] = new_building_id
         except:
             print 'No buildings in specified zone.'
             if zone_id not in dset.parcels.zone_id.values:
@@ -102,7 +102,7 @@ def run(dset, current_year):
         # dset.establishments.building_id[idx_agents_to_relocate] = new_building_id
         try:
             new_building_id = b[b.zone_id==zone_id].index.values[0]
-            agents_joined.building_id[idx_agents_to_relocate] = new_building_id
+            agents_joined.loc[idx_agents_to_relocate, "building_id"] = new_building_id  # corrected chain index error
         except:
             print 'No buildings in specified zone.'
             if zone_id not in dset.parcels.zone_id.values:
@@ -149,7 +149,7 @@ def run(dset, current_year):
             newbuildings.index = np.array([new_building_id])
             dset.d['buildings'] = pd.concat([dset.buildings,newbuildings])
             dset.buildings.index.name = 'building_id'
-            agents_joined.building_id[idx_agents_to_relocate] = new_building_id
+            agents_joined.loc[idx_agents_to_relocate, "building_id"] = new_building_id  # corrected chain index error
             
     def unplace_estabs(agents_joined,zone_id,number_of_agents):
         number_of_agents = -number_of_agents #flip the sign

@@ -173,10 +173,11 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
   for var in list(newbuildings.columns.values):
     print newbuildings.groupby('county_id')[var].sum()
     """
-  
   newbuildings['general_type'] = newbuildings['building_type_id'].map(inv_type_d)
   #newbuildings['lot_size'] = dset.parcels.ix[newbuildings.index].shape_area*10.764
-  newbuildings['lot_size'] = dset.parcels.ix[newbuildings.index].parcel_sqft
+  #newbuildings['lot_size'] = dset.parcels.ix[newbuildings.index].parcel_sqft
+  newbuildings = pd.merge(newbuildings, dset.parcels, right_on='parcel_id', left_index=True)[['building_type_id', 'building_sqft', 'general_type', 'parcel_sqft']]
+  newbuildings = newbuildings.rename(columns={"parcel_sqft": "lot_size"})
   newbuildings['residential_units'] = np.ceil((newbuildings.general_type=='Residential')*newbuildings.building_sqft/RESUNITSIZE)
   newbuildings = newbuildings[newbuildings.lot_size<MAXLOTSIZE]
   newbuildings = newbuildings[newbuildings.lot_size>MINLOTSIZE]

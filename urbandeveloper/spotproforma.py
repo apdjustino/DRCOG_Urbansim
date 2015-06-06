@@ -173,7 +173,8 @@ class Developer:
   even_rents = self.min_even_rents_d[form]
   # print "sqft cost\n", even_rents
 
-  building_bulks = np.reshape(parcel_sizes,(-1,1))*np.reshape(even_rents.index,(1,-1)) # parcel sizes * possible fars
+  #building_bulks = np.reshape(parcel_sizes,(-1,1))*np.reshape(even_rents.index,(1,-1)) # parcel sizes * possible fars
+  building_bulks = np.dot(np.reshape(parcel_sizes,(-1,1)), np.reshape(even_rents.index,(1,-1)))
 
   building_costs = building_bulks * np.reshape(even_rents.values,(1,-1)) / INTERESTRATE # cost to build the new building
 
@@ -182,7 +183,7 @@ class Developer:
   building_revenue = building_bulks * np.reshape(rents,(-1,1)) / INTERESTRATE # rent to make for the new building
 
 
-  profit = building_revenue.values - building_costs.values # profit for each form
+  profit = building_revenue - building_costs # profit for each form //had to get rid of .values because of new numpy
 
 
   maxprofitind = np.argmax(profit,axis=1) # index maximum total profit
