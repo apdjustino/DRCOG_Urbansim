@@ -58,6 +58,7 @@ def calculate_variables(dset):
     b['office'] = (b.building_type_id==5).astype('int32')
     b['retail_or_restaurant'] = (np.in1d(b.building_type_id,[17,18])).astype('int32')
     b['industrial_building'] = (np.in1d(b.building_type_id,[9,22])).astype('int32')
+    b['residential_sqft'] = (b.bldg_sq_ft - b.non_residential_sqft)
     b['btype_hlcm'] = 1*(b.building_type_id==2) + 2*(b.building_type_id==3) + 3*(b.building_type_id==20) + 4*np.invert(np.in1d(b.building_type_id,[2,3,20]))
     b['county8001'] = (b.county_id==8001).astype('int32')
     b['county8005'] = (b.county_id==8005).astype('int32')
