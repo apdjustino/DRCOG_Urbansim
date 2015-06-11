@@ -5,19 +5,19 @@ import dframe_explorer
 
 
 #
-# z2015 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2015_091714071811.csv')
-# z2020 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2020_091714074157.csv')
-# z2025 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2025_091714082039.csv')
-# z2030 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2030_091714095214.csv')
-# z2035 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2035_091714111246.csv')
-# z2040 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2040_091714132335.csv')
-#
+z2015 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2015_091714071811.csv')
+z2020 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2020_091714074157.csv')
+z2025 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2025_091714082039.csv')
+z2030 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2030_091714095214.csv')
+z2035 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2035_091714111246.csv')
+z2040 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2040_091714132335.csv')
+
 #
 
 hh = pd.read_csv('C:/Users/jmartinez/Documents/houesholds_2.csv')
 
-#d = {'2015': z2015, '2020':z2020, '2025':z2025, '2030':z2030, '2035':z2030, '2040':z2040}
-d = {'households':hh}
+d = {'2015': z2015, '2020':z2020, '2025':z2025, '2030':z2030, '2035':z2030, '2040':z2040}
+#d = {'households':hh}
 
 
 dframe_explorer.start(d,
