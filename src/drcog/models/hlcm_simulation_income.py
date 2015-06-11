@@ -68,7 +68,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         empty_units = buildings.residential_units.sub(choosers[choosers['building_id']!=-1].groupby('building_id').size(),fill_value=0)
         empty_units = empty_units[empty_units>0].order(ascending=False)
         print 'number of empty units is %d' %empty_units.sum()
-        alternatives = buildings.ix[np.repeat(empty_units.index,empty_units.values.astype('int'))]
+        alternatives = buildings.ix[np.repeat(empty_units.index.values,empty_units.values.astype('int'))]
 
 
         if((seg[1][2]/12) <= 0):
@@ -100,7 +100,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
             numalts = alts.shape[0]
             sample = np.tile(alts.index.values,numchoosers)
             alts_sample = alts
-            alts_sample['join_index'] = np.repeat(segment.index,SAMPLE_SIZE)
+            alts_sample['join_index'] = np.repeat(segment.index.values,SAMPLE_SIZE)
             alts_sample = pd.merge(alts_sample,segment,left_on='join_index',right_index=True,suffixes=('','_r'))
             chosen = np.zeros((numchoosers,SAMPLE_SIZE))
             chosen[:,0] = 1
