@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="bd0be5fe-21b4-4d37-b72c-f1458686a511" name="Default" comment="">
+    <list default="true" id="bd0be5fe-21b4-4d37-b72c-f1458686a511" name="Default" comment="Updated code to be compatible with pandas 16.1">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/drcog/variables/indicators.py" afterPath="$PROJECT_DIR$/src/drcog/variables/indicators.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="urbansim.iws" />
@@ -48,7 +49,7 @@
       <file leaf-file-name="transition.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/drcog/models/transition.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="0" max-vertical-offset="8636">
+            <state vertical-scroll-proportion="0.0" vertical-offset="119" max-vertical-offset="8636">
               <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="33" />
               <folding />
             </state>
@@ -75,10 +76,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="variable_library.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="variable_library.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/drcog/variables/variable_library.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-4.089441" vertical-offset="3411" max-vertical-offset="4216">
+            <state vertical-scroll-proportion="0.0" vertical-offset="3206" max-vertical-offset="4216">
               <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
               <folding>
                 <element signature="e#0#36#0" expanded="true" />
@@ -87,12 +88,14 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="simulation_gui_element.py" pinned="false" current="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/opus_gui/scenarios_manager/controllers/tabs/simulation_gui_element.py">
+      <file leaf-file-name="indicators.py" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/drcog/variables/indicators.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="6885" max-vertical-offset="8517">
-              <caret line="405" column="13" selection-start-line="405" selection-start-column="13" selection-end-line="405" selection-end-column="13" />
-              <folding />
+            <state vertical-scroll-proportion="0.57816374" vertical-offset="3750" max-vertical-offset="4590">
+              <caret line="248" column="33" selection-start-line="248" selection-start-column="33" selection-end-line="248" selection-end-column="33" />
+              <folding>
+                <element signature="e#0#42#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -120,7 +123,7 @@
       <file leaf-file-name="elasticity_model_2SLS.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/urbandeveloper/elasticity_model_2SLS.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="739" max-vertical-offset="2975">
+            <state vertical-scroll-proportion="0.0" vertical-offset="918" max-vertical-offset="3009">
               <caret line="54" column="42" selection-start-line="54" selection-start-column="42" selection-end-line="54" selection-end-column="42" />
               <folding />
             </state>
@@ -140,7 +143,6 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/src/drcog/variables/indicators.py" />
         <option value="$PROJECT_DIR$/src/drcog/maps/data/data_frame_init_new.py" />
         <option value="$PROJECT_DIR$/src/drcog/maps/dframe_explorer_new.html" />
         <option value="$USER_HOME$/Downloads/neighbors.py" />
@@ -167,6 +169,7 @@
         <option value="$PROJECT_DIR$/urbandeveloper/developer.py" />
         <option value="$PROJECT_DIR$/src/drcog/models/hlcm_simulation_income.py" />
         <option value="$PROJECT_DIR$/src/drcog/variables/variable_library.py" />
+        <option value="$PROJECT_DIR$/src/drcog/variables/indicators.py" />
       </list>
     </option>
   </component>
@@ -270,7 +273,7 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
-              <option name="myItemId" value="models" />
+              <option name="myItemId" value="variables" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -686,13 +689,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/drcog/variables/indicators.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="561" max-vertical-offset="4403">
-          <caret line="33" column="40" selection-start-line="33" selection-start-column="27" selection-end-line="33" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/drcog/maps/dframe_explorer.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.9606481" vertical-offset="1278" max-vertical-offset="2329">
@@ -845,7 +841,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="-0.18777293" vertical-offset="45289" max-vertical-offset="99042">
           <caret line="2684" column="33" selection-start-line="2684" selection-start-column="33" selection-end-line="2684" selection-end-column="33" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -881,7 +876,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="9378" max-vertical-offset="46631">
           <caret line="558" column="0" selection-start-line="558" selection-start-column="0" selection-end-line="559" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -975,7 +969,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.33184856" vertical-offset="6345" max-vertical-offset="49878">
           <caret line="392" column="0" selection-start-line="392" selection-start-column="0" selection-end-line="392" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -1005,10 +998,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/drcog/variables/variable_library.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-4.089441" vertical-offset="3411" max-vertical-offset="4216">
+        <state vertical-scroll-proportion="0.0" vertical-offset="3206" max-vertical-offset="4216">
           <caret line="7" column="0" selection-start-line="7" selection-start-column="0" selection-end-line="7" selection-end-column="0" />
           <folding>
             <element signature="e#0#36#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/drcog/variables/indicators.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.57816374" vertical-offset="3750" max-vertical-offset="4590">
+          <caret line="248" column="33" selection-start-line="248" selection-start-column="33" selection-end-line="248" selection-end-column="33" />
+          <folding>
+            <element signature="e#0#42#0" expanded="true" />
           </folding>
         </state>
       </provider>

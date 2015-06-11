@@ -1,7 +1,9 @@
 import pandas as pd, numpy as np, time, os
+from sqlalchemy import *
 
 def run(dset, indicator_output_directory, forecast_year):
 
+    engine = create_engine('postgresql://postgres:postgres@localhost:5432/postgres', echo=False)
     z_index = dset.zones.index
     zone_index = pd.Series(index=z_index).fillna(0)
 
@@ -256,5 +258,8 @@ def run(dset, indicator_output_directory, forecast_year):
     #csumm['ln_pop_within_20min_sim']=sim_pop_20min
 
     ######
-    csumm.to_csv(os.path.join(indicator_output_directory,'county_summary%s_%s.csv' % (forecast_year,time.strftime('%c').replace('/','').replace(':','').replace(' ',''))))
-    zsumm.to_csv(os.path.join(indicator_output_directory,'zone_summary%s_%s.csv' % (forecast_year,time.strftime('%c').replace('/','').replace(':','').replace(' ',''))))
+    #csumm.to_csv(os.path.join(indicator_output_directory,'county_summary%s_%s.csv' % (forecast_year,time.strftime('%c').replace('/','').replace(':','').replace(' ',''))))
+    #zsumm.to_csv(os.path.join(indicator_output_directory,'zone_summary%s_%s.csv' % (forecast_year,time.strftime('%c').replace('/','').replace(':','').replace(' ',''))))
+
+    csumm.to_sql('county_summary', engine, if_exists='append')
+    zsumm.to_sql('zone_summary', engine, if_exists='append')
