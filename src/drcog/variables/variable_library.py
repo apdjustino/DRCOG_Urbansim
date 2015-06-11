@@ -1,4 +1,5 @@
-import pandas as pd, numpy as np
+import pandas as pd, numpy as np, os
+from synthicity.utils import misc
 elcm_configuration = {'building_sqft_per_job_table':'building_sqft_per_job','scaling_factor':1.0}
 
 #VARIABLE LIBRARY
@@ -123,7 +124,7 @@ def calculate_variables(dset):
     z = dset.fetch('zones')
     del z['county']
     z['zone_id']=z.index
-    zone_county=pd.read_csv('C:\urbansim\data/TAZ_County_Table.csv')
+    zone_county=pd.read_csv(os.path.join(misc.data_dir(), 'TAZ_County_Table.csv'))
     zone_county=zone_county.set_index('zone_id')
     zone_county=zone_county[['county']]
     z=pd.merge(z,zone_county, left_on='zone_id', right_index=True)
@@ -140,6 +141,7 @@ def calculate_variables(dset):
     print z[z['zone_id']==1722]['zonal_emp']
     del z['zone_id']
 
+    z['residential_sqft_zone'] = b.groupby('zone_id').residential_sqft.sum()
     z['zonal_pop'] = hh.groupby('zone_id').persons.sum()
     z['residential_units_zone'] = b.groupby('zone_id').residential_units.sum()
     z['ln_residential_units_zone'] = b.groupby('zone_id').residential_units.sum().apply(np.log1p)
