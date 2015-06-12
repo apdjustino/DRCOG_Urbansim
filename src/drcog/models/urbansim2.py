@@ -1,7 +1,7 @@
 from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
-from drcog.models import elcm_simulation, hlcm_simulation_income, regression_model_simulation,census_model_simulation, dataset, refiner
+from drcog.models import elcm_simulation, hlcm_simulation_income, regression_model_simulation,census_model_simulation, dataset, refiner, new_refiner
 from drcog.variables import variable_library, indicators, urbancanvas_export
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
@@ -40,6 +40,12 @@ class Urbansim2(Model):
         
         #UrbanCanvas scenario id, replaced by db-retrieved value during export step
         urbancanvas_scenario_id = 0
+
+                #####Residential Buildings#####
+        new_refiner.add_res_buildings(dset)
+
+        #####Non-Residential Buildings#####
+        new_refiner.add_non_res_buildings(dset)
         
         for sim_year in range(base_year,forecast_year+1):
             print 'Simulating year ' + str(sim_year)
@@ -68,7 +74,7 @@ class Urbansim2(Model):
                                          relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)
                                          
             ############     DEMAND-SIDE REFINEMENT
-            #refiner.run(dset, sim_year)
+            refiner.run(dset, sim_year)
 
             ############     REPM SIMULATION
             if core_components_to_run['Price']:
