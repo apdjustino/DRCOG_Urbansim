@@ -2,7 +2,7 @@ from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
 from drcog.models import elcm_simulation, hlcm_simulation_income, regression_model_simulation,census_model_simulation, dataset, refiner, new_refiner
-from drcog.variables import variable_library, indicators, urbancanvas_export
+from drcog.variables import variable_library, indicators , urbancanvas_export
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
 from synthicity.utils import misc

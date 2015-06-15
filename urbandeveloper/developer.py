@@ -86,7 +86,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
 
 #parcel_predictions = pd.read_csv(os.path.join(misc.data_dir(),'parcel_predictions.csv'),index_col='parcel_id') # feasible buildings
   parcels=dset.parcels
-  engine = create_engine('postgresql://postgres:postgres@localhost:5432/postgres', echo=False)
+  #engine = create_engine('postgresql://postgres:postgres@localhost:5432/postgres', echo=False)
 
     ###add zone_county_relation table for debugging#
 
@@ -103,7 +103,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
   elasticity_table = pd.DataFrame(columns=['residential_elasticity','non-residential_elasticity'])
   elasticity_table.index.name = 'year'
   elasticity_table.loc[year]=[elasticity_res, elasticity_non_res]
-  elasticity_table.to_sql('elasticities',engine, if_exists='append')
+  #elasticity_table.to_sql('elasticities',engine, if_exists='append')
 
 
   if parcels.index.name !='parcel_id':
@@ -250,7 +250,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
 
 if __name__ == '__main__':  
 
-  #dset = baydataset.BayAreaDataset(os.path.join(misc.data_dir(),'bayarea.h5'))
+
   import dataset
   dset = dataset.DRCOGDataset(os.path.join(misc.data_dir(),'drcog.h5'))
   run(dset,2010)

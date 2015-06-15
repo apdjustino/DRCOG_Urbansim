@@ -2,6 +2,10 @@
 # Copyright (C) 2010-2011 University of California, Berkeley, 2005-2009 University of Washington
 # See opus_core/LICENSE 
 
+#update SqlAlchemy to work with elixir
+import sqlalchemy.orm
+sqlalchemy.orm.ScopedSession = sqlalchemy.orm.scoped_session
+
 from elixir import Entity, Field, Integer, DateTime, Text, \
                    ManyToOne, OneToOne, using_options, BLOB
 
