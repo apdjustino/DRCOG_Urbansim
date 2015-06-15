@@ -32,23 +32,23 @@ for k,v in inv_type_d.items():
 def get_simulated_demand(btyp,zone_id,hh_zone_diff,emp_zone_diff,zone_args):  ###Expressed in terms of sqft
   #return np.random.rand()*20000 # 2000 sqft in every zone!
   if (btyp in [2,3,20,24]) and (zone_id in hh_zone_diff.index):
-      hh_diff = hh_zone_diff[zone_id]
+      hh_diff = hh_zone_diff.loc[zone_id]
       if zone_args is not None:
           subsidized_demand = zone_args.subsidized_hh_demand[zone_id]
           hh_diff = hh_diff + subsidized_demand
-      if hh_diff > 0:
+      if hh_diff.values > 0:
           # print 'hh_diff'
           # print hh_diff
           #return hh_diff*RESUNITSIZE
           return hh_diff*300
   elif (btyp in [5,17,18,9,22]) and (zone_id in emp_zone_diff.index):
-      emp_diff = emp_zone_diff[zone_id]
+      emp_diff = emp_zone_diff.loc[zone_id]
 
       if zone_args is not None:
           subsidized_demand = zone_args.subsidized_emp_demand[zone_id]
           emp_diff = emp_diff
                      #+ subsidized_demand
-      if emp_diff > 0:
+      if emp_diff.values > 0:
           # print 'emp_diff'
           # print emp_diff
           #return emp_diff*BSQFT_JOB
@@ -94,9 +94,15 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
   #additions for implementing elasticity models
   #construct elasticity model class
   #e_model = elasticity_model.elasticity_model(dset)
-  e_model = elasticity_model_2SLS.elasticity_model(dset)
+
+  #////Uncomment emodel when done with testing
+  '''e_model = elasticity_model_2SLS.elasticity_model(dset)
   elasticity_res = e_model.estimate_elasticity(e_model.zones)
   elasticity_non_res = e_model.estimate_non_res_elasticity(e_model.zones)
+  '''
+  elasticity_res = 1
+  elasticity_non_res = 1
+
 
   #need to separate residential from non-residential buildings
   res_building_types = [2,3,20,24]
@@ -123,7 +129,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
     else:
         elasticity = elasticity_non_res
 
-    btyp_predictions = parcel_predictions[btyp].dropna()
+    btyp_predictions = parcel_predictions[str(btyp)].dropna()
     #btyp_pro=parcel_predictions[btyp+ '_profit'].dropna()
 
 
@@ -136,10 +142,10 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
       demand_sqft = get_simulated_demand(btyp,zone_id,hh_zone_diff,emp_zone_diff,zone_args)
 
         #gets total sqft in zone/building type combo
-      tot_sqft = (dset.zones.residential_sqft_zone.ix[zone_id]) + (dset.zones.non_residential_sqft_zone.ix[zone_id])
+      #tot_sqft = (dset.zones.residential_sqft_zone.ix[zone_id]) + (dset.zones.non_residential_sqft_zone.ix[zone_id])
 
       try:
-        pct_sqft_chng = (demand_sqft / tot_sqft)
+        pct_sqft_chng = 0 #pct_sqft_chng = (demand_sqft / tot_sqft)
       except:
           pct_sqft_chng = 0
 
@@ -167,7 +173,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
 
       #print "capacity " +str(choiceset.sum()) +" versus demand " + str(demand_sqft) + " in zone " + str(zone_id)
 
-      if not demand_sqft:
+      if demand_sqft is None:
           #print "unutilized capacity " + str(choiceset.sum()) + " in zone " + str(zone_id)
           continue
       #print "capacity " +str(choiceset.sum()) +" versus demand " + str(demand_sqft) + " in zone " + str(zone_id)
@@ -185,7 +191,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
       accu_built=0
       choice=np.zeros(len(choiceset_ind))
       i=0
-      while (accu_built<demand_sqft):
+      while (accu_built<demand_sqft.values):
           if (choiceset_ind.size>0):
             choice[i]=choiceset_ind[0]
             accu_built=accu_built+choiceset[choiceset_ind[0]]
@@ -237,9 +243,10 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
   newbuildings['residential_units'] = np.ceil((newbuildings.general_type=='Residential')*newbuildings.building_sqft/RESUNITSIZE)
   newbuildings = newbuildings[newbuildings.lot_size<MAXLOTSIZE]
   newbuildings = newbuildings[newbuildings.lot_size>MINLOTSIZE]
-  
-  newbuildings['net_residential_units'] = newbuildings.residential_units.sub(
-               dset.buildings.groupby('parcel_id').residential_units.sum().ix[newbuildings.index],fill_value=0)
+
+  ###reset for production
+  #newbuildings['net_residential_units'] = newbuildings.residential_units.sub(
+  #             dset.buildings.groupby('parcel_id').residential_units.sum().ix[newbuildings.index],fill_value=0)
   print newbuildings.describe()
   print newbuildings.groupby('building_type_id').building_sqft.sum()
   print newbuildings.groupby('building_type_id').residential_units.sum()
@@ -252,5 +259,33 @@ if __name__ == '__main__':
 
 
   import dataset
+  import cProfile
+
   dset = dataset.DRCOGDataset(os.path.join(misc.data_dir(),'drcog.h5'))
-  run(dset,2010)
+
+
+  #add variables for test sim
+  emp_zone_diff = pd.read_csv('C:/Users/jmartinez/Documents/Projects/UrbanSim/Developer/emp_zone_diff.csv', index_col=0)
+  hh_zone_diff = pd.read_csv('C:/Users/jmartinez/Documents/Projects/UrbanSim/Developer/hh_zone_diff.csv', index_col=0)
+  parcel_predictions = pd.read_csv('C:/Users/jmartinez/Documents/Projects/UrbanSim/Developer/parcel_predictions.csv', index_col=0)
+  zone_args = pd.read_csv('C:/Users/jmartinez/Documents/Projects/UrbanSim/Developer/zone_args.csv', index_col=0)
+  min_building_sqft = 400
+  min_lot_sqft = 500
+  max_parcel_sqft = 200000
+
+  fnc = "newbuildings, price_shifters  = run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2011," +\
+                             "min_building_sqft=min_building_sqft," +\
+                             "min_lot_sqft=min_lot_sqft," +\
+                             "max_lot_sqft=max_parcel_sqft,zone_args=zone_args)"
+  cProfile.run(fnc, "c:/users/jmartinez/documents/profile")
+
+  # newbuildings, price_shifters  = run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2011,
+  #                            min_building_sqft=min_building_sqft,
+  #                            min_lot_sqft=min_lot_sqft,
+  #                            max_lot_sqft=max_parcel_sqft,zone_args=zone_args)
+
+  #newbuildings.to_csv('C:/Users/jmartinez/Documents/Projects/UrbanSim/Developer/new_buildings.csv')
+  #price_shifters.to_csv('C:/Users/jmartinez/Documents/Projects/UrbanSim/Developer/price_shifters.csv')
+
+
+
