@@ -57,7 +57,7 @@ def get_simulated_demand(btyp,zone_id,hh_zone_diff,emp_zone_diff,zone_args):  ##
       #return 1000
       #print 'No %s demand in zone %s.' % (btyp,zone_id)
       pass
-      
+
 
 price_shifters = {}
 def shift_up(btyp,zone_id,elasticity, pct_sqft_chng):

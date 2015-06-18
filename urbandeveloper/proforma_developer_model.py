@@ -1,7 +1,7 @@
 import pandas as pd, numpy as np
 import sys, time, random, string, os
 from synthicity.utils import misc
-from urbandeveloper import spotproforma, developer
+from urbandeveloper import spotproforma, new_developer
 import sys
 def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     #Record post-demand-model change in zone-level household/job totals
@@ -255,14 +255,14 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     parcel_predictions.index.name = 'parcel_id'
 
 
-    # parcel_predictions.to_csv(os.path.join(misc.data_dir(),'parcel_predictions.csv'),index_col='parcel_id',float_format="%.2f")
+    parcel_predictions.to_csv(os.path.join(misc.data_dir(),'parcel_predictions.csv'),index_col='parcel_id',float_format="%.2f")
     # far_predictions.to_csv(os.path.join(misc.data_dir(),'far_predictions.csv'),index_col='parcel_id',float_format="%.2f")
 
     #####CALL TO THE DEVELOPER
-    newbuildings, price_shifters  = developer.run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=sim_year,
+    newbuildings, price_shifters  = new_developer.run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=sim_year,
                                  min_building_sqft=developer_configuration['min_building_sqft'],
                                  min_lot_sqft=developer_configuration['min_lot_sqft'],
-                                 max_lot_sqft=max_parcel_sqft,zone_args=zone_args)
+                                 max_lot_sqft=max_parcel_sqft,zone_args=zone_args, tot_sqft=dset.zones[['residential_sqft_zone','non_residential_sqft_zone']])
                                  
     #####APPLY PRICE SHIFTS (PSEUDO-EQUILIBRATION) [MAKE THIS OPTIONAL]
     print 'Applying price shifts'
@@ -284,7 +284,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     
     ##When net residential units is less than 0, need to implement building demolition
     newbuildings = newbuildings[['building_type_id','building_sqft','residential_units','lot_size']]
-    print newbuildings.building_sqft
+    #print newbuildings.building_sqft
     newbuildings = newbuildings.reset_index()
 
     newbuildings.columns = ['parcel_id','building_type_id','bldg_sq_ft','residential_units','land_area']
@@ -338,7 +338,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     newbuildings.loc[(newbuildings.bldg_sq_ft>0)*(np.in1d(newbuildings.building_type_id,[2,3,20,24])), "unit_price_residential"] = newbuildings.unit_res_price_county
     newbuildings.loc[(newbuildings.bldg_sq_ft>0)*(np.in1d(newbuildings.building_type_id,[2,3,20,24])), "unit_price_res_sqft"] = newbuildings.res_price_county
     newbuildings.loc[(newbuildings.non_residential_sqft>0)*(np.in1d(newbuildings.building_type_id,[5,9,17,18,22])), "unit_price_non_residential"] = newbuildings.nres_price_county
-    print newbuildings[(np.in1d(newbuildings.building_type_id,[2,3,20,24]))*(newbuildings['bldg_sq_ft']>0)].groupby('county_id').unit_price_res_sqft.mean()
+    #print newbuildings[(np.in1d(newbuildings.building_type_id,[2,3,20,24]))*(newbuildings['bldg_sq_ft']>0)].groupby('county_id').unit_price_res_sqft.mean()
     #### end XG
 
 

@@ -186,20 +186,26 @@ class Developer:
   profit = building_revenue - building_costs # profit for each form //had to get rid of .values because of new numpy
 
 
-  maxprofitind = np.argmax(profit,axis=1) # index maximum total profit
+
+  #### XG: Use a mask, because otherwise nan mess up the optimization
+  profitm = np.ma.array(profit, mask=np.isnan(profit))
+  maxprofitind = np.argmax(profitm,axis=1) # index maximum total profit
+  #### end: XG
 
   maxprofit = profit[np.arange(maxprofitind.size),maxprofitind] # value of the maximum total profit
+  maxprofit_fars = pd.DataFrame(even_rents.index[maxprofitind].astype('float'),index=parcel_sizes.index)
+  maxprofit_fars.columns=['fars']
+  # far of the max profit
 
-  maxprofit_fars = pd.Series(even_rents.index[maxprofitind].astype('float'),index=parcel_sizes.index) # far of the max profit
+  #XG: use a proper slicing (with pandas 16) to make sure that unprofitable buildings are not produced.
+  maxprofit = pd.DataFrame(maxprofit.astype('float'),index=parcel_sizes.index)
+  maxprofit.columns=['profit']
+  maxprofit.loc[maxprofit['profit']<0, 'profit'] = np.nan # remove unprofitable buildings
+  maxprofit_fars.loc[np.isnan(maxprofit['profit']), 'fars']= np.nan  # remove far of unprofitable building
+  maxprofit_fars['fars']=maxprofit_fars['fars'].astype('float32')
 
-  maxprofit = pd.Series(maxprofit.astype('float'),index=parcel_sizes.index)
-  maxprofit.values[maxprofit<0] = np.nan # remove unprofitable buildings
-  maxprofit_fars.values[np.isnan(maxprofit)] = np.nan  # remove far of unprofitable building
+  return maxprofit_fars, maxprofit
 
-
-  # print maxprofit_fars.value_counts()
-
-  return maxprofit_fars.astype('float32'), maxprofit
 
 
  def profit(self, form, rents, land_costs, parcel_sizes):
