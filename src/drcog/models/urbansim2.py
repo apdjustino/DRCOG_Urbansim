@@ -6,6 +6,7 @@ from drcog.variables import variable_library, indicators , urbancanvas_export
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
 from synthicity.utils import misc
+import cProfile
 
 class Urbansim2(Model):
     """Runs an UrbanSim2 scenario
@@ -74,7 +75,8 @@ class Urbansim2(Model):
                                          relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)
                                          
             ############     DEMAND-SIDE REFINEMENT
-            refiner.run(dset, sim_year)
+            refiner_fnc = "refiner.run(dset, sim_year)"
+            cProfile.runctx(refiner_fnc, locals={'dset':dset, 'sim_year':sim_year}, globals={'refiner': refiner}, filename='c:/users/jmartinez/documents/refiner_time')
 
             ############     REPM SIMULATION
             if core_components_to_run['Price']:

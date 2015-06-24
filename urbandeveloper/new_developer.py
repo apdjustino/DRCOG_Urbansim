@@ -181,7 +181,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
 
 
 
-    price_shifters.to_csv('c:/users/jmartinez/documents/test_results.csv')
+    #price_shifters.to_csv('c:/users/jmartinez/documents/test_results.csv')
 
 sqft = pd.DataFrame()
 if __name__ == '__main__':
