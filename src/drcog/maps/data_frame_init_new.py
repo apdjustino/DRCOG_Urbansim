@@ -11,7 +11,7 @@ from drcog.maps import dframe_explorer_new
 # z2035 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2035_091714111246.csv')
 # z2040 = pd.read_csv('//kennedy/CRS/Urban Sim/UrbanSim Final RTP data folder/data/drcog2/runs/zone_summary2040_091714132335.csv')
 
-data = pd.read_csv('C:/users/jmartinez/documents/zone_summary_test.csv')
+data = pd.read_csv('C:/users/jmartinez/documents/zone_summary.csv')
 d = {'zone_data':data}
 
 

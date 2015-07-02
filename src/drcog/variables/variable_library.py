@@ -10,7 +10,7 @@ def calculate_variables(dset):
 
 
     # XG: Fix the mismatch between zone and county
-    p = dset.fetch('parcels')
+    p = dset.parcels
     del p['county_id']
     zone_county=pd.read_csv('C:\urbansim\data/TAZ_County_Table.csv')
     zone_county=zone_county.set_index('zone_id')
@@ -238,7 +238,7 @@ def calculate_variables(dset):
     bpz.loc[bpz.residential_units_capacity < 0, "residential_units_capacity"] = 0  # corrected chained index error
     dset.d['buildings'] = bpz
     if dset.parcels.index.name != 'parcel_id':
-        dset.d['parcels'] = p
+        dset.parcels = pu
 
     dset.d['zones']=zu
-    dset.d['parcels']=pu
+    #dset.d['parcels']=pu

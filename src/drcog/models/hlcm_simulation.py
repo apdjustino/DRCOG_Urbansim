@@ -112,3 +112,29 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     table = dset.households # need to go back to the whole dataset
     table[depvar].ix[new_homes.index] = new_homes.values.astype('int32')
     dset.store_attr(output_varname,year,copy.deepcopy(table[depvar]))
+
+
+if __name__ == '__main__':
+    from drcog.models import dataset
+    from drcog.variables import variable_library
+    import os
+    import cProfile
+    dset = dataset.DRCOGDataset(os.path.join(misc.data_dir(),'drcog.h5'))
+
+    #Load estimated coefficients
+    coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs.h5'))
+    dset.coeffs = coeff_store.coeffs.copy()
+    coeff_store.close()
+
+    coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs_res.h5'))
+    dset.coeffs_res = coeff_store.coeffs_res.copy()
+    coeff_store.close()
+
+    variable_library.calculate_variables(dset)
+    alternatives = dset.buildings[(dset.buildings.residential_units>0)]
+    sim_year = 2011
+    fnc = "simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'households',output_names = ('drcog-coeff-hlcm-%s.csv','DRCOG HOUSEHOLD LOCATION CHOICE MODELS (%s)','hh_location_%s','household_building_ids')," +\
+                                         "agents_groupby= ['income_3_tenure',],transition_config = {'Enabled':True,'control_totals_table':'annual_household_control_totals','scaling_factor':1.0}," +\
+                                         "relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)"
+
+    cProfile.run(fnc, 'c:/users/jmartinez/documents/projects/urbansim/cprofile/hlcm')

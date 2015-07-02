@@ -1,7 +1,7 @@
 import synthicity.urbansim.interaction as interaction
 import pandas as pd, numpy as np, copy
 from synthicity.utils import misc
-
+import os
 
 from drcog.models import transition
 
@@ -54,7 +54,28 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         choosers[depvar].ix[movers] = -1
 
     movers_all = choosers[choosers[depvar]==-1]
+    county_growth_share = pd.read_csv(os.path.join(misc.data_dir(),'county_growth_share.csv'), index_col=0 )
+    counties = county_growth_share.columns.values
+    current_growth_shares = county_growth_share.loc[year].values
+    movers_counties = np.random.choice(counties, movers_all.shape[0], replace=True, p=current_growth_shares)
+
+    movers_all['county_id'] = movers_counties
+
+
     income_segment = movers_all.groupby('income_grp')['upper_income_grp_val','lower_income_grp_val'].agg([np.mean, np.size])
+    # get county growth control data and merge with income_segements
+
+    income_segment['county'] = county_growth_share.loc[year].index.values[0]
+    income_segment['growth_share'] = county_growth_share.loc[year][0]
+    copy_df = income_segment.copy()
+    for i in county_growth_share.loc[year][1:].iteritems():
+
+        copy_df['county'] = i[0]
+        copy_df['growth_share'] = i[1]
+        income_segment = pd.concat([income_segment, copy_df])
+
+    income_segment = income_segment.set_index(['county', income_segment.index])
+
     print "Total new agents and movers = %d" % len(movers_all.index)
 
 
@@ -63,13 +84,13 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
 
 
         movers = movers_all[(movers_all['income']<= seg[1][0]) & (movers_all['income']>= seg[1][2])]
-        print 'Placing %d households in the income range (%d, %d)' % (seg[1][1],seg[1][2], seg[1][0])
+        print 'County: %s. Placing %d households in the income range (%d, %d)' % (seg[0][0],seg[1][1],seg[1][2], seg[1][0])
 
         empty_units = buildings.residential_units.sub(choosers[choosers['building_id']!=-1].groupby('building_id').size(),fill_value=0)
         empty_units = empty_units[empty_units>0].order(ascending=False)
         print 'number of empty units is %d' %empty_units.sum()
         alternatives = buildings.ix[np.repeat(empty_units.index.values,empty_units.values.astype('int'))]
-
+        alternatives = alternatives[alternatives.county_id == int(seg[0][0])]
 
         if((seg[1][2]/12) <= 0):
             alts = alternatives[alternatives['unit_price_residential'] < 186281]
@@ -176,7 +197,31 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         #temp_count += 1
         if(temp_count > 50):
             break
-    out_table.to_csv('C:/users/jmartinez/documents/households_simulation_test.csv')
+    #out_table.to_csv('C:/users/jmartinez/documents/households_simulation_test.csv')
     dset.households.loc[out_table.index] = out_table
     #homeless.to_csv('C:/users/jmartinez/documents/homeless.csv')
 
+if __name__ == '__main__':
+    from drcog.models import dataset
+    from drcog.variables import variable_library
+    import os
+    import cProfile
+    dset = dataset.DRCOGDataset(os.path.join(misc.data_dir(),'drcog.h5'))
+
+    #Load estimated coefficients
+    coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs.h5'))
+    dset.coeffs = coeff_store.coeffs.copy()
+    coeff_store.close()
+
+    coeff_store = pd.HDFStore(os.path.join(misc.data_dir(),'coeffs_res.h5'))
+    dset.coeffs_res = coeff_store.coeffs_res.copy()
+    coeff_store.close()
+
+    variable_library.calculate_variables(dset)
+    alternatives = dset.buildings[(dset.buildings.residential_units>0)]
+    sim_year = 2011
+    fnc = "simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'households',output_names = ('drcog-coeff-hlcm-%s.csv','DRCOG HOUSEHOLD LOCATION CHOICE MODELS (%s)','hh_location_%s','household_building_ids')," +\
+                                         "agents_groupby= ['income_3_tenure',],transition_config = {'Enabled':True,'control_totals_table':'annual_household_control_totals','scaling_factor':1.0}," +\
+                                         "relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)"
+
+    cProfile.run(fnc, 'c:/users/jmartinez/documents/projects/urbansim/cprofile/hlcm')
