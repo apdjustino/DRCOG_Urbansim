@@ -55,20 +55,20 @@ def calculate_parcels(series, d):
     parcel_sqft = series[5]
 
 
+    if(d[zone_id][2] != 0):
 
-
-    if (int(btype) in [2,3,20,24]):
-        hh_remaining_sqft = d[zone_id][0] - parcel_sqft
-        if (hh_remaining_sqft > -500000):
-            parcel_btype = (parcel_id, btype, parcel_sqft)
-            d[zone_id].append(parcel_btype)
-            d[zone_id][0] = hh_remaining_sqft
-    else:
-        emp_remaining_sqft = d[zone_id][1] - parcel_sqft
-        if (emp_remaining_sqft > -500000):
-            parcel_btype = (parcel_id, btype, parcel_sqft)
-            d[zone_id].append(parcel_btype)
-            d[zone_id][1] = emp_remaining_sqft
+        if (int(btype) in [2,3,20,24]):
+            hh_remaining_sqft = d[zone_id][0] - parcel_sqft
+            if (hh_remaining_sqft > -500000):
+                parcel_btype = (parcel_id, btype, parcel_sqft)
+                d[zone_id].append(parcel_btype)
+                d[zone_id][0] = hh_remaining_sqft
+        else:
+            emp_remaining_sqft = d[zone_id][1] - parcel_sqft
+            if (emp_remaining_sqft > -500000):
+                parcel_btype = (parcel_id, btype, parcel_sqft)
+                d[zone_id].append(parcel_btype)
+                d[zone_id][1] = emp_remaining_sqft
 
 def run_job(df, d):
     res = df.apply(calculate_parcels, axis=1, args=(d,))
@@ -116,6 +116,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
         demand_sqft = get_simulated_demand(i, hh_zone_diff, emp_zone_diff, zone_args)
         result_l.append(demand_sqft[0])
         result_l.append(demand_sqft[1])
+        result_l.append(int(zone_args.loc[i, "no_build"]))
         d[i] = result_l
 
 
@@ -156,7 +157,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
     #this is where I would run the 2SLS model and adjust prices
     price_shifters_d = price_shifters.to_dict()
 
-    results = results.loc[:, 2:len(results.columns)-1].transpose()
+    results = results.loc[:, 3:len(results.columns)-1].transpose()
     results = results.loc[:, ~results.iloc[0].isnull()]
     results = results.stack()
     results = results.reset_index()

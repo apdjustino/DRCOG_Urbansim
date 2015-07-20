@@ -1,7 +1,7 @@
 from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
-from drcog.models import elcm_simulation, hlcm_simulation, regression_model_simulation, dataset,census_model_simulation
+from drcog.models import elcm_simulation, new_hlcm_simulation, regression_model_simulation, dataset,census_model_simulation
 from drcog.variables import variable_library, indicators
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
@@ -80,7 +80,7 @@ class Urbansim2(Model):
                 if core_components_to_run['HLCM']:
                     logger.log_status('HLCM simulation.')
                     alternatives = dset.buildings[(dset.buildings.residential_units>0)]
-                    hlcm_simulation.simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'households',output_names = ("drcog-coeff-hlcm-%s.csv","DRCOG HOUSEHOLD LOCATION CHOICE MODELS (%s)","hh_location_%s","household_building_ids"),
+                    new_hlcm_simulation.simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'households',output_names = ("drcog-coeff-hlcm-%s.csv","DRCOG HOUSEHOLD LOCATION CHOICE MODELS (%s)","hh_location_%s","household_building_ids"),
                                              agents_groupby= ['income_3_tenure',],transition_config = {'Enabled':True,'control_totals_table':'annual_household_control_totals','scaling_factor':1.0},
                                              relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)
 
@@ -151,7 +151,7 @@ class Urbansim2(Model):
             b = dset.fetch('buildings')
             e = dset.fetch('establishments')
             hh = dset.fetch('households')
-            p = dset.fetch('parcels')
+            p = dset.parcels
             if p.index.name != 'parcel_id':
                 p = p.set_index(p['parcel_id'])
             b['county_id'] = p.county_id[b.parcel_id].values

@@ -19,7 +19,7 @@ def run(dset, current_year):
 
     e = dset.establishments
     hh = dset.households
-    zone_refine = pd.read_csv(os.path.join(misc.data_dir(),'zone_demand_refine.csv'))
+    zone_refine = pd.read_csv(os.path.join(misc.data_dir(),'zone_demand_refine_no_broomfield.csv'))
     shuffled_hh_id = np.random.shuffle(hh.index.values)
     shuffled_emp_id = np.random.shuffle(e.index.values)
     

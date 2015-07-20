@@ -8,7 +8,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     hh = dset.fetch('households')
     e = dset.fetch('establishments')
     buildings = dset.fetch('buildings')
-    parcels = dset.fetch('parcels')
+    parcels = dset.parcels
     if parcels.index.name != 'parcel_id':
         parcels = parcels.set_index(parcels['parcel_id'])
     buildings['zone_id'] = parcels.zone_id[buildings.parcel_id].values
