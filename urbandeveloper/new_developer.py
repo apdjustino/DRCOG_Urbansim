@@ -55,7 +55,7 @@ def calculate_parcels(series, d):
     parcel_sqft = series[5]
 
 
-    if(d[zone_id][2] != 0):
+    if(d[zone_id][2] == 0):
 
         if (int(btype) in [2,3,20,24]):
             hh_remaining_sqft = d[zone_id][0] - parcel_sqft

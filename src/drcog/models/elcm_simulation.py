@@ -24,6 +24,7 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     alternatives.building_sqft_per_job = alternatives.building_sqft_per_job.fillna(1000)
     alternatives.loc[:, 'spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job  # corrected chained indexing error
     empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
+    empty_units = empty_units[empty_units>0].order(ascending=False)
 
     alts = alternatives.ix[empty_units.index]
     alts["supply"] = empty_units
