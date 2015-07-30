@@ -36,7 +36,7 @@ def calculate_variables(dset):
     p['acres'] = p.parcel_sqft/43560.0
     p['ln_acres'] = (p.parcel_sqft/43560.0).apply(np.log1p)
 
-    
+
     #BUILDING VARIABLES
     b = dset.fetch('buildings',building_sqft_per_job_table=elcm_configuration['building_sqft_per_job_table'],bsqft_job_scaling=elcm_configuration['scaling_factor'])
     b = b[['building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','unit_price_non_residential','unit_price_residential']]
@@ -76,7 +76,7 @@ def calculate_variables(dset):
     p['ln_units_per_acre'] = (b.groupby('parcel_id').residential_units.sum()/p.acres).apply(np.log1p)
 
 
-    
+
     #HOUSEHOLD VARIABLES
     hh_estim = dset.fetch('households_for_estimation')
     hh_estim['tenure'] = 1
@@ -108,11 +108,12 @@ def calculate_variables(dset):
         choosers['income5xlt'] = choosers.income*5.0
         choosers['income10xlt'] = choosers.income*5.0
         choosers['wkrs_hhs'] = choosers.workers*1.0/choosers.persons
-        
+
     #ESTABLISHMENT VARIABLES
     e = dset.fetch('establishments')
 
     e['zone_id'] = b.zone_id[e.building_id].values
+
     e['county_id'] = b.county_id[e.building_id].values
     e['sector_id_six'] = 1*(e.sector_id==61) + 2*(e.sector_id==71) + 3*np.in1d(e.sector_id,[11,21,22,23,31,32,33,42,48,49]) + 4*np.in1d(e.sector_id,[7221,7222,7224]) + 5*np.in1d(e.sector_id,[44,45,7211,7212,7213,7223]) + 6*np.in1d(e.sector_id,[51,52,53,54,55,56,62,81,92])
     e['sector_id_retail_agg'] = e.sector_id*np.logical_not(np.in1d(e.sector_id,[7211,7212,7213])) + 7211*np.in1d(e.sector_id,[7211,7212,7213])
@@ -225,7 +226,7 @@ def calculate_variables(dset):
           'emp_sector1_within_45min','emp_sector2_within_45min','emp_sector3_within_45min','emp_sector4_within_45min'
         ,'emp_sector5_within_45min','emp_sector6_within_45min','residential_unit_per_jobs_within_15_min' ,'residential_sqft_per_jobs_within_15_min']]
     ztableau.to_csv('C:\urbansim\output\emp_tableau.csv')
-    
+
     ##JOINS
     #merge parcels with zones
     pz = pd.merge(p.reset_index(),z,left_on='zone_id',right_index=True)

@@ -13,7 +13,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
         parcels = parcels.set_index(parcels['parcel_id'])
     buildings['zone_id'] = parcels.zone_id[buildings.parcel_id].values
 
-    e['zone_id'] = buildings.zone_id[e.building_id].values
+    #e['zone_id'] = buildings.zone_id[e.building_id].values
     hh['zone_id'] = buildings.zone_id[hh.building_id].values
     hh_zone2 = hh.groupby('zone_id').size()
     emp_zone2 = e.groupby('zone_id').employees.sum()
@@ -283,11 +283,12 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     buildings.index = buildings.bid
     
     ##When net residential units is less than 0, need to implement building demolition
-    newbuildings = newbuildings[['building_type_id','building_sqft','residential_units','lot_size']]
+    newbuildings = newbuildings[['zone_id','building_type_id',
+                                 'building_sqft','residential_units','lot_size']]
     #print newbuildings.building_sqft
     newbuildings = newbuildings.reset_index()
 
-    newbuildings.columns = ['parcel_id','building_type_id','bldg_sq_ft','residential_units','land_area']
+    newbuildings.columns = ['parcel_id','zone_id','building_type_id','bldg_sq_ft','residential_units','land_area']
     newbuildings.parcel_id = newbuildings.parcel_id.astype('int32')
     #newbuildings['county_id']=parcel_predictions.county_id[newbuildings.parcel_id].values  # why is this here?
 
@@ -354,7 +355,7 @@ def run(dset,hh_zone1,emp_zone1,developer_configuration,sim_year):
     newbuildings.sqft_per_unit = newbuildings.sqft_per_unit.astype('int32')
     newbuildings = newbuildings.set_index(np.arange(len(newbuildings.index))+np.amax(buildings.index.values)+1)
 
-    buildings = buildings[['building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','bldg_sq_ft2','unit_price_non_residential','unit_price_residential','building_sqft_per_job','non_residential_units','base_year_jobs','all_units', 'unit_price_res_sqft']]
+    buildings = buildings[['zone_id','building_type_id','improvement_value','land_area','non_residential_sqft','parcel_id','residential_units','sqft_per_unit','stories','tax_exempt','year_built','bldg_sq_ft','bldg_sq_ft2','unit_price_non_residential','unit_price_residential','building_sqft_per_job','non_residential_units','base_year_jobs','all_units', 'unit_price_res_sqft']]
     
     return buildings, newbuildings
 

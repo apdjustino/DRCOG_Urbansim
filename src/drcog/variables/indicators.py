@@ -78,12 +78,23 @@ def run(dset, indicator_output_directory, forecast_year):
     p = dset.fetch('parcels')
     if p.index.name != 'parcel_id':
         p = p.set_index(p['parcel_id'])
-    b['county_id'] = p.county_id[b.parcel_id].values
-    hh['county_id'] = b.county_id[hh.building_id].values
-    e['county_id'] = b.county_id[e.building_id].values
-    b['zone_id'] = p.zone_id[b.parcel_id].values
-    hh['zone_id'] = b.zone_id[hh.building_id].values
-    e['zone_id'] = b.zone_id[e.building_id].values
+
+
+    #b['zone_id'] = p.zone_id[b.parcel_id].values
+    #hh['zone_id'] = b.zone_id[hh.building_id].values
+    #e['zone_id'] = b.zone_id[e.building_id].values
+    county_table = pd.read_csv('C:/urbansim/data/taz_county_table.csv', index_col=1)
+
+    hh.drop('zone_id', axis=1, inplace=True)
+    #e.drop('zone_id', axis=1, inplace=True)
+
+    hh = pd.merge(hh, b, left_on='building_id', right_index=True)
+    #e = pd.merge(e, b, left_on='building_id', right_index=True)
+
+    b['county_id'] = county_table.loc[b.zone_id, "county_id"].values
+    hh['county_id'] = county_table.loc[hh.zone_id, "county_id"].values
+    e['county_id'] = county_table.loc[e.zone_id, "county_id"].values
+
     sim_hh_county = hh.groupby('county_id').size()
     sim_pop_county = hh.groupby('county_id').persons.sum()
     sim_medinc_county = hh.groupby('county_id').income.median()

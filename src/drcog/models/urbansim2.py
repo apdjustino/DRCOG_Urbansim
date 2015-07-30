@@ -1,7 +1,7 @@
 from opus_core.model import Model
 from opus_core.logger import logger
 import numpy as np, pandas as pd, os, time
-from drcog.models import elcm_simulation, new_hlcm_simulation, regression_model_simulation,census_model_simulation, dataset, refiner, new_refiner
+from drcog.models import elcm_simulation, new_hlcm_simulation, regression_model_simulation,census_model_simulation, dataset, refiner, new_refiner, new_elcm_model
 from drcog.variables import variable_library, indicators , urbancanvas_export
 from drcog.travel_model import export_zonal_file
 from urbandeveloper import proforma_developer_model
@@ -63,7 +63,7 @@ class Urbansim2(Model):
             if core_components_to_run['ELCM']:
                 logger.log_status('ELCM simulation.')
                 alternatives = dset.buildings[(dset.buildings.non_residential_sqft>0)]
-                elcm_simulation.simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'establishments',output_names = ("drcog-coeff-elcm-%s.csv","DRCOG EMPLOYMENT LOCATION CHOICE MODELS (%s)","emp_location_%s","establishment_building_ids"),
+                new_elcm_model.simulate(dset, year=sim_year,depvar = 'building_id',alternatives=alternatives,simulation_table = 'establishments',output_names = ("drcog-coeff-elcm-%s.csv","DRCOG EMPLOYMENT LOCATION CHOICE MODELS (%s)","emp_location_%s","establishment_building_ids"),
                                          agents_groupby= ['sector_id_retail_agg',],transition_config = {'Enabled':True,'control_totals_table':'annual_employment_control_totals','scaling_factor':1.0})
 
             #################     HLCM SIMULATION
@@ -75,7 +75,7 @@ class Urbansim2(Model):
                                          relocation_config = {'Enabled':True,'relocation_rates_table':'annual_household_relocation_rates','scaling_factor':1.0},)
                                          
             ############     DEMAND-SIDE REFINEMENT
-            refiner.run(dset, sim_year)
+            #refiner.run(dset, sim_year)
             # refiner_fnc = "refiner.run(dset, sim_year)"
             #cProfile.runctx(refiner_fnc, locals={'dset':dset, 'sim_year':sim_year}, globals={'refiner': refiner}, filename='c:/users/jmartinez/documents/refiner_time')
 

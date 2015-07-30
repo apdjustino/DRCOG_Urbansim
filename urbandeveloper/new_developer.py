@@ -163,15 +163,19 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
     results = results.reset_index()
     newbuildings = results.loc[:, 0].apply(pd.Series)
     newbuildings.columns = ['parcel_id', 'building_type_id', 'building_sqft']
-    newbuildings = newbuildings.drop_duplicates(subset='parcel_id')
-    newbuildings = newbuildings.set_index('parcel_id')
+
+
+
 
     #report stats on buildings
     print newbuildings.groupby('building_type_id').size()
     print "Total buildings built: ", newbuildings.groupby('building_type_id').size().sum()
 
     newbuildings['general_type'] = newbuildings['building_type_id'].map(inv_type_d)
-    newbuildings = pd.merge(newbuildings, dset.parcels, right_on='parcel_id', left_index=True)[['building_type_id', 'building_sqft', 'general_type', 'parcel_sqft']]
+    newbuildings = pd.merge(newbuildings, dset.parcels, on='parcel_id')[['parcel_id', 'building_type_id', 'building_sqft', 'general_type', 'parcel_sqft']]
+    newbuildings["zone_id"] = results.loc[:, "level_1"]
+    newbuildings = newbuildings.drop_duplicates(subset='parcel_id')
+    newbuildings = newbuildings.set_index('parcel_id')
     newbuildings = newbuildings.rename(columns={"parcel_sqft": "lot_size"})
     newbuildings['residential_units'] = np.ceil((newbuildings.general_type=='Residential')*newbuildings.building_sqft/RESUNITSIZE)
     newbuildings = newbuildings[newbuildings.lot_size<MAXLOTSIZE]

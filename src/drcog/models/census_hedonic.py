@@ -32,7 +32,7 @@ def data_zone(dset,buildings, parcels,zones,establishments):
     ### neighborhood (right now zone ) characteristics
     b['zone_id']=p.zone_id[b.parcel_id].values
 
-    e['zone_id'] = b.zone_id[e.building_id].values
+    #e['zone_id'] = b.zone_id[e.building_id].values
     z['zone_id']=z.index
 
 

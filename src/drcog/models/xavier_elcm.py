@@ -5,7 +5,8 @@ from synthicity.utils import misc
 def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table = 'establishments',
               output_names=None,agents_groupby = ['income_3_tenure',],transition_config=None):
 
-    output_csv, output_title, coeff_name, output_varname = output_names 
+    output_csv, output_title, coeff_name, output_varname = output_names
+
 
     if transition_config['Enabled']:
         ct = dset.fetch(transition_config['control_totals_table'])
@@ -20,15 +21,30 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     placed_choosers = choosers[choosers[depvar]>0]
 
     movers = choosers[choosers[depvar]==-1]
-    movers.loc[:, "zone_id"] = -1
+
+    movers['zone_id']=-1
     print "Total new agents and movers = %d" % len(movers.index)
+    dset.establishments.loc[movers.index, 'zone_id']=-1
+    print dset.establishments[dset.establishments['zone_id']==1834].employees.sum()
     alternatives.building_sqft_per_job = alternatives.building_sqft_per_job.fillna(1000)
+
     alternatives.loc[:, 'spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job  # corrected chained indexing error
+    #alternatives[ 'spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job
+    #alternatives.loc[:, 'spaces'] = alternatives.non_residential_sqft/1000
+
     empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
     empty_units = empty_units[empty_units>0].order(ascending=False)
+    print empty_units[empty_units.index==472137]
 
     alts = alternatives.ix[empty_units.index]
     alts["supply"] = empty_units
+    print movers[movers.employees>4000]
+
+    u=pd.DataFrame(empty_units)
+    u.columns=['empty']
+    u['building_id']=u.index
+    empty_units_test=pd.merge(u, alternatives[['zone_id']], left_on='building_id', right_index=True)
+    print empty_units_test[empty_units_test.zone_id==1834]['empty'].sum()
     lotterychoices = True
     pdf = pd.DataFrame(index=alts.index)
 
@@ -75,29 +91,23 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     for name, segment in segments:
         name = str(name)
         print "Assigning units to %d agents of segment %s" % (len(segment.index),name)
-        p=pdf['segment%s'%name]
+        p=pdf['segment%s'%name].values
         def choose(p,mask,alternatives,segment,new_homes,minsize=None):
-
-            choiceset = alternatives.loc[alternatives.supply >= minsize]
-
             p = copy.copy(p)
-            #p[alternatives.supply<minsize] = 0
-            p = p[alternatives.supply >= minsize]
-            p_arr = p.values
+           # p[alternatives.supply<minsize] = 0
+            pu=pd.DataFrame(p, index=alternatives.index)
+            pu.columns=['pro']
+            pu.loc[alternatives.supply<minsize, 'pro']=0
 
-
-            try:
-            #indexes = np.random.choice(len(alternatives.index),len(segment.index),replace=False,p=p/p.sum())
-              indexes = np.random.choice(choiceset.index, len(segment.index), replace=False, p=p_arr/p_arr.sum())
+            #p=p[alternatives.supply>=minsize]
+            pp=np.array(pu).flatten()
+            try: 
+              indexes = np.random.choice(len(alternatives.index),len(segment.index),replace=False,p=pp/pp.sum())
             except:
               print "WARNING: not enough options to fit agents, will result in unplaced agents"
               return mask,new_homes
-            #new_homes.ix[segment.index] = alternatives.index.values[indexes]
-            #alternatives["supply"].ix[alternatives.index.values[indexes]] -= minsize
-            new_homes.ix[segment.index] = indexes
-            #alternatives["supply"].ix[indexes] -= minsize
-            alternatives.loc[indexes, "supply"] -= minsize
-
+            new_homes.ix[segment.index] = alternatives.index.values[indexes]
+            alternatives["supply"].ix[alternatives.index.values[indexes]] -= minsize
             return mask,new_homes
         tmp = segment['employees']
         for name, subsegment in reversed(list(segment.groupby(tmp.astype('int')))):
@@ -105,15 +115,39 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
 
     build_cnts = new_homes.value_counts()  #num estabs place in each building
     print "Assigned %d agents to %d locations with %d unplaced" % (new_homes.size,build_cnts.size,build_cnts.get(-1,0))
-    new_homes_frame = pd.DataFrame(new_homes, columns=['building_id'])
-    result_set = pd.merge(new_homes_frame, dset.buildings, left_on='building_id', right_index=True, how='left')[['building_id','zone_id']]
-    result_set["employees"] = pd.merge(result_set, dset.establishments, left_index=True, right_index=True)['employees'].values
+
+    p=dset.parcels
+    p=p.set_index('parcel_id')
+
+    #b=pd.merge(b, p[['zone_id']], left_on='parcel_id', right_index=True)
+    #est=pd.merge(dset.establishments, b[['zone_id']], left_on='building_id', right_index=True)
+
+    del dset.establishments['zone_id']
+    dset.establishments['zone_id']=pd.merge(dset.establishments, dset.buildings[['zone_id']], left_on='building_id', right_index=True)['zone_id']
+
+    print dset.establishments[dset.establishments['zone_id']==1834].employees.sum()
+    placed_choosers = choosers[choosers[depvar]>0]
+    empty_units = alternatives.spaces.sub(placed_choosers.groupby('building_id').employees.sum(),fill_value=0).astype('int')
+
+
+
     table = dset.establishments # need to go back to the whole dataset
-    #table[depvar].ix[new_homes.index] = new_homes.values.astype('int32')
-    table.loc[result_set.index, "building_id"] = -1
-    table.loc[result_set.index, "zone_id"] = -1
-    table.loc[result_set.index,"building_id"] = result_set.building_id.values
-    table.loc[result_set.index,"zone_id"] = result_set.zone_id
-    #table["zone_id"] = pd.merge(table, result_set, on='building_id', how='left')['zone_id'].values
-    #table["zone_id"] = pd.merge(table, dset.buildings, left_on='building_id', right_index=True, how='left')["zone_id_y"].values
+    table[depvar].ix[new_homes.index] = new_homes.values.astype('int32')
+    del table['zone_id']
+    table['zone_id']=pd.merge(dset.establishments, dset.buildings[['zone_id']], left_on='building_id', right_index=True)['zone_id']
+    print table.groupby('zone_id').employees.sum().loc[1834]
+
+    table['space']=0
+
+    #b.building_sqft_per_job = table.building_sqft_per_job.fillna(1000)
+    alternatives.loc[:, 'spaces'] = alternatives.non_residential_sqft/alternatives.building_sqft_per_job
+    empty_units=alternatives.spaces.sub(table[table['building_id']>0].groupby('building_id').employees.sum(),fill_value=0).astype('int')
+    empty_units = empty_units[empty_units>0].order(ascending=False)
+    u=pd.DataFrame(empty_units)
+    u.columns=['empty']
+    u['building_id']=u.index
+    empty_units_test=pd.merge(u, alternatives[['zone_id']], left_on='building_id', right_index=True)
+    print empty_units_test[empty_units_test.zone_id==1834]['empty'].sum()
+    print table[table.index==472137]
+
     dset.store_attr(output_varname,year,copy.deepcopy(table[depvar]))

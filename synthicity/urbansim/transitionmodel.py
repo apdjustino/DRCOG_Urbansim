@@ -1,7 +1,7 @@
 import pandas as pd, numpy as np
 
 def estimate(dset,config,year=None,show=True,variables=None):
-  return 
+  return
 
 def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
   assert "table" in config
@@ -13,23 +13,23 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
   year_step = 1 if "year_step" not in config else config["year_step"]
   first_year = config["first_year"]
   curyear = year
-  prevyear = curyear - year_step 
-  hhs = eval(config["table"]) 
+  prevyear = curyear - year_step
+  hhs = eval(config["table"])
   outtblname = config["writetotmp"]
-  if curyear == first_year: 
+  if curyear == first_year:
     hhs["_year_added_"] = np.array([curyear]*len(hhs.index))
     dset.save_tmptbl(outtblname,hhs)
     return
   # print hhs
   #if show: print hhs.describe()
-  
+
   if "control_totals" in config:
     control_totals = eval(config["control_totals"])
     cur_ct = control_totals.ix[curyear]
     prev_ct = control_totals.ix[prevyear]
-     
+
   if "vacancy_targets" in config:
-    
+
     va_cfg = config["vacancy_targets"]
     assert "targets" in va_cfg and "supply" in va_cfg and "demands" in va_cfg
     demands = va_cfg["demands"]
@@ -39,7 +39,7 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
     # print "Numerator:\n", num
     # print "Denominator:\n", denom
     vacancy = (denom-num)/denom
-    if "negative_vacancy" in config and config["negative_vacancy"] == False: vacancy[vacancy<0] = 0 
+    if "negative_vacancy" in config and config["negative_vacancy"] == False: vacancy[vacancy<0] = 0
     # print "Vacancy = (denom-num)/denom:\n", vacancy
     targets = eval(va_cfg["targets"])
     target_vacancy = targets[year]
@@ -51,7 +51,7 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
     control_totals = cur_ct = newunits.reset_index()
     prev_ct = None
     config["amount_field"] = 0
-  
+
   cols = []
   for col in control_totals.columns:
     if col <> config["amount_field"]: cols.append(col)
@@ -59,7 +59,7 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
     if prev_ct is not None:
       #cnt = cur_ct.reset_index(drop=True).set_index(cols) - prev_ct.reset_index(drop=True).set_index(cols)
       cnt = cur_ct.reset_index(drop=True).set_index(cols)
-    else:  
+    else:
       cnt = cur_ct.reset_index(drop=True).set_index(cols)
   else:
     cnt = cur_ct - prev_ct
@@ -82,7 +82,7 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
       # print num
       if "vacancy_targets" not in config:
           num = num - subset_size
-      if subset_size == 0:  
+      if subset_size == 0:
           continue
       print 'action'
       print num
@@ -109,7 +109,7 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
     if num <> 0: newhh.append(hhs.ix[np.random.choice(hhs.index.values,num,replace=False)])
 
   if not newhh:
-    print 'None!!!'  
+    print 'None!!!'
     return # no new agents
   newhh = pd.concat(newhh)
   newhh[config["geography_field"]] = -1
@@ -121,4 +121,4 @@ def simulate(dset,config,year=None,show=True,variables=None,subtract=False):
   dset.save_tmptbl(outtblname,hhs)
   dset.save_table(outtblname)
 
-  print "Histogram of agents by year:\n", hhs._year_added_.value_counts() 
+  print "Histogram of agents by year:\n", hhs._year_added_.value_counts()
