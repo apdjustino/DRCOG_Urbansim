@@ -172,7 +172,7 @@ def run(dset,hh_zone_diff,emp_zone_diff,parcel_predictions,year=2010,min_buildin
     print "Total buildings built: ", newbuildings.groupby('building_type_id').size().sum()
 
     newbuildings['general_type'] = newbuildings['building_type_id'].map(inv_type_d)
-    newbuildings = pd.merge(newbuildings, dset.parcels, on='parcel_id')[['parcel_id', 'building_type_id', 'building_sqft', 'general_type', 'parcel_sqft']]
+    newbuildings = pd.merge(newbuildings, dset.parcels, left_on='parcel_id', right_index=True)[['parcel_id', 'building_type_id', 'building_sqft', 'general_type', 'parcel_sqft']]
     newbuildings["zone_id"] = results.loc[:, "level_1"]
     newbuildings = newbuildings.drop_duplicates(subset='parcel_id')
     newbuildings = newbuildings.set_index('parcel_id')

@@ -4,11 +4,8 @@ import pandas as pd, numpy as np, copy, os
 from synthicity.utils import misc
 from sqlalchemy import *
 import multiprocessing as mp
-
-
 from drcog.models import transition
-
-
+from functools import partial
 
 def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table = None,
               output_names=None,agents_groupby = ['income_3_tenure',],transition_config=None,relocation_config=None):
@@ -32,16 +29,8 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
         dset.d['households'] = new
         dset.d['persons'] = new_linked['linked']
 
-    #calculate mortgage payment values
 
-    temp_count = 0
 
-    buildings = alternatives
-    out_table = pd.DataFrame(columns=dset.households.columns)
-    homeless = pd.DataFrame(columns=dset.households.columns)
-    r = .05/12
-    n = 360
-    buildings['est_mortgage_payment']=buildings.unit_price_residential*((r*(1+r)**n)/((1+r)**n-1))
 
     dset.households.index.name = 'household_id'
     #choosers = dset.fetch(simulation_table)
@@ -66,101 +55,92 @@ def simulate(dset,year,depvar = 'building_id',alternatives=None,simulation_table
     movers_all['county_id'] = movers_counties
     empty_units = dset.buildings[(dset.buildings.residential_units>0)].residential_units.sub(choosers.groupby('building_id').size(),fill_value=0)
     empty_units = empty_units[empty_units>0].order(ascending=False)
-    alts = alternatives.ix[np.repeat(empty_units.index.values,empty_units.values.astype('int'))]
+    #alts = alternatives.ix[np.repeat(empty_units.index.values,empty_units.values.astype('int'))]
+    alts = alternatives.loc[empty_units.index]
 
     #create alternatives subset with mortage info
     r = .05/12
     n = 360
+
+    alts.loc[:, 'payment'] = alts.unit_price_residential*((r*(1+r)**n)/((1+r)**n-1))
 
     try:
         subset_alts = alts[['unit_price_residential', 'county_id']]
     except:
         subset_alts = alts[['unit_price_residential', 'county_id_y']]
         subset_alts.rename(columns={'county_id_y':'county_id'}, inplace=True)
-
-    subset_alts['payment'] = alts.unit_price_residential*((r*(1+r)**n)/((1+r)**n-1))
-
+        alts.rename(columns={'county_id_y':'county_id'}, inplace=True)
 
     #generate probabilities
     pdf = gen_probs(dset, movers_all, agents_groupby, alts, output_names)
-
-    #build data structures for loop
-
-
-    #income_3_tenure limits
     income_limits = {1:60000/12, 2:120000/12, 3:dset.households.income.max()/12, 4:40000/12, 5:dset.households.income.max()/12}
+    # mapfunc = partial(pick_locations, pdf=pdf, alts=alts, income_limits=income_limits)
+    #
+    # map(mapfunc, movers_all.groupby(['income_3_tenure', 'county_id']))
+    #
+    #
+    # print 'Done!'
 
-    bool_price1 = (subset_alts.payment / income_limits[1]) <= 0.33
-    bool_price2 = (subset_alts.payment / income_limits[2]) <= 0.33
-    bool_price3 = (subset_alts.payment / income_limits[3]) <= 0.33
-    bool_price4 = (subset_alts.payment / income_limits[4]) <= 0.33
-    bool_price5 = (subset_alts.payment / income_limits[5]) <= 0.33
-    d = {}
+    df_list = []
 
-
-    for county in counties:
-        data_list = []
-        bool_counties = subset_alts.county_id == int(county)
-        ids1 = subset_alts.loc[(bool_counties) & (bool_price1)].index.tolist()
-        ids2 = subset_alts.loc[(bool_counties) & (bool_price2)].index.tolist()
-        ids3 = subset_alts.loc[(bool_counties) & (bool_price3)].index.tolist()
-        ids4 = subset_alts.loc[(bool_counties) & (bool_price4)].index.tolist()
-        ids5 = subset_alts.loc[(bool_counties) & (bool_price5)].index.tolist()
-                ##generate lists of probabilities
-        prob1 = pdf.loc[set(ids1), 'segment1'].tolist()
-        prob2 = pdf.loc[set(ids2), 'segment2'].tolist()
-        prob3 = pdf.loc[set(ids3), 'segment3'].tolist()
-        prob4 = pdf.loc[set(ids4), 'segment4'].tolist()
-        prob5 = pdf.loc[set(ids5), 'segment5'].tolist()
-
-        data_list.append((ids1, prob1))
-        data_list.append((ids2, prob2))
-        data_list.append((ids3, prob3))
-        data_list.append((ids4, prob4))
-        data_list.append((ids5, prob5))
-
-        d[int(county)] = data_list
+    try:
+        grp_movers = movers_all.groupby(['income_3_tenure', 'county_id'])
+    except:
+        movers_all.rename(columns={'county_id_y':'county_id'}, inplace=True)
+        grp_movers = movers_all.groupby(['income_3_tenure', 'county_id'])
 
 
+    for i in grp_movers:
+        df_list.append(i[1])
+
+    #function that splits lists into equal sizes
+
+    lol = lambda lst, sz: [lst[i:i+sz] for i in range(0, len(lst), sz)]
+
+    split_list = lol(df_list, len(df_list)/4)
+
+    # boundaries for income categories
 
 
+    mapfunc = partial(run_job, pdf=pdf, alts=alts, income_limits=income_limits)
 
-    #call placing method
-
-    m_loop = movers_all[['income_3_tenure','county_id','building_id']]
-    #m_loop = m_loop.head(5000)
-    out_list = []
-
-    from functools import partial
-    mapfunc = partial(apply_func, d=d, out=out_list)
     p = mp.Pool(processes=4)
-    split_dfs = np.array_split(m_loop, 4)
-    pool_results = p.map(mapfunc, split_dfs)
+    pool_results = p.map(mapfunc, split_list)
     p.close()
     p.join()
 
-    #m_loop.apply(place_households, axis=1, args=(d,out_list))
+
     master_list = pool_results[0] + pool_results[1] + pool_results[2] + pool_results[3]
 
-    building_ids = [i[0] for i in master_list]
-    household_id = [i[1] for i in master_list]
+    b_ids = []
+    hh_ids = []
 
-    result_frame = pd.DataFrame(columns=['household_id', 'building_id'])
-    result_frame['household_id'] = household_id
-    result_frame['building_id'] = building_ids
+    for i in master_list:
+        b_ids.append(i[0])
+        hh_ids.append(i[1])
+
+
+    b_array = np.concatenate(b_ids)
+    hh_array = np.concatenate(hh_ids)
+
+    zone_ids = dset.buildings.loc[b_array, "zone_id"].values.astype('int32')
+
+    dset.households.loc[hh_array, "building_id"] = -1
+    dset.households.loc[hh_array, "zone_id"] = -1
     #
-    dset.households.loc[result_frame.household_id, 'building_id'] = result_frame['building_id'].values
+    # #add new data
     #
-    #result_frame.to_csv('c:/users/jmartinez/documents/test_results.csv')
-
-    #print out_list
-
-    dset.households.loc[result_frame.household_id]
+    dset.households.loc[hh_array, "building_id"] = b_array
+    dset.households.loc[hh_array, "zone_id"] = zone_ids
 
 
 
 
-
+def run_job(df, alts, pdf, income_limits):
+    #res = df.apply(pick_locations, args=(alts,pdf,))
+    mapfunc = partial(pick_locations, alts=alts, pdf=pdf, income_limits=income_limits)
+    res = map(mapfunc, df)
+    return res
 
 def gen_probs(dset, movers, agents_groupby, alts, output_names):
     output_csv, output_title, coeff_name, output_varname = output_names
@@ -204,59 +184,39 @@ def gen_probs(dset, movers, agents_groupby, alts, output_names):
     return pdf
 
 
-def apply_func(df, d, out):
-    res = df.apply(place_households, axis=1, args=(d,out))
-    return out
-def place_households(series,d,output):
-    hh_id = series.name
-    income_3_tenure = int(series.income_3_tenure) - 1
-    county_id = int(series.county_id)
-    building_id = series.building_id
+def pick_locations(series, alts, pdf, income_limits):
 
-    id_list = d[county_id][income_3_tenure][0]
-    prob_list = d[county_id][income_3_tenure][1]
-    prob_list = prob_list[0:len(id_list)]
-
-    if len(id_list) > 0:
-        chosen_index = np.random.choice(id_list, 1, replace=False, p=np.asarray(prob_list)/np.asarray(prob_list).sum())
-        d[county_id][income_3_tenure][0].remove(chosen_index)
-        output.append((chosen_index[0], hh_id))
-    else:
-        backstop_ids = d[county_id][2][0]
-        backstop_prob_list = d[county_id][2][1]
-        try:
-            chosen_index = np.random.choice(backstop_ids, 1, replace=False)
-            d[county_id][2][0].remove(chosen_index)
-        except:
-            chosen_index = [-1]
-
-        output.append((chosen_index[0], hh_id))
-
-        #chosen_index = -1
-        #output.append((chosen_index, hh_id))
-    #try:
+    segment_income = series.iloc[0].income_3_tenure
+    seg = "segment%d"%segment_income
+    county_id = int(series.iloc[0].county_id)
+    segment_income_val = income_limits[segment_income]
+    bool_county = (alts.county_id != county_id)
+    bool_income = (alts.payment / segment_income_val > 0.33)
+    bool_available = (alts.residential_units <= 0)
 
 
+    choice_probs = pdf.loc[:, seg].values
+    pu = pd.DataFrame(choice_probs, index=alts.index)
+    pu.columns=['pro']
+    pu.loc[(bool_county) & (bool_income) & (bool_available) , 'pro']=0
+    pp=np.array(pu).flatten()
 
-    #except:
-    #    chosen_index = -1
-    #    output.append((chosen_index, hh_id))
+    try:
+        indexes = np.random.choice(len(alts.index), series.shape[0], replace=False, p=pp/pp.sum())
+        selected_ids = alts.index.values[indexes]
+        alts.loc[selected_ids, "residential_units"] -= 1
 
-    #output.loc[hh_id, 'building_id'] = chosen_index
+    except:
+        #selected_ids = np.tile(-1, series.shape[0])
+        #zone_ids = np.tile(-1, series.shape[0])
+        new_probs = pdf.loc[:, seg]
+        new_probs = np.array(new_probs).flatten()
+        selected_ids = np.random.choice(alts.index, series.shape[0], replace=True, p=new_probs/new_probs.sum())
+        #zone_ids = dset.buildings.loc[selected_ids, "zone_id"].values.astype('int32')
 
+    hh_index = np.array(series.index)
 
-
-
-
-
-
-
-
-
-
-
-
-
+    return (selected_ids, hh_index)
 
 
 if __name__ == '__main__':

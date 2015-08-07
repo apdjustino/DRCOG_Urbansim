@@ -128,12 +128,14 @@ def add_parcel(dset,zone_id):
 
     new_parcel_data = new_parcel_dict.values()
     new_parcel_frame = pd.DataFrame(columns=dset.parcels.columns)
-    new_parcel_frame.loc[0] = new_parcel_data
+    new_parcel_frame.loc[new_parcel_id] = new_parcel_data
+    #new_parcel_frame.set_index('parcel_id', inplace=True)
 
     #dset.parcels.loc[pid] = new_parcel_data
     dset.parcels = pd.concat([dset.parcels, new_parcel_frame])
 
-    print "added new parcel with id %d" % new_parcel_id
+
+    #print "added new parcel with id %d" % new_parcel_id
 
 
     return new_parcel_id
